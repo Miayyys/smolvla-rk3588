@@ -17,3 +17,7 @@ __pycache__/
 *.egg-info/
 /build/
 /dist/
+
+# Local learning notes and agent instructions.
+/info.md
+/AGENTS.md

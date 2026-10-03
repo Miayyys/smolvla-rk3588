@@ -14,7 +14,7 @@
 
 使用`lerobot/smolvla_libero`及`lerobot/libero`；模型、processor和修订号锁定。准备数据划分、校准输入、离线动作缓存和LIBERO仿真环境。原checkpoint文件906,712,520字节。
 
-入口：`download_and_upload.py`、`split_libero.py`、`fp_baseline.py`、`haq_offline_eval.py`。学习基础见[info.md](../info.md)，后续技术路线见[量化技术计划](project-route.md#record-quantization-technique-plan)。
+入口：`download_and_upload.py`、`split_libero.py`、`fp_baseline.py`、`haq_offline_eval.py`。学习基础见个人量化学习笔记（仅保存在本地），后续技术路线见[量化技术计划](project-route.md#record-quantization-technique-plan)。
 
 ## 3. 硬件格式探测与成本表
 
@@ -955,7 +955,7 @@ BF16 子图均成功导出真实 `.rknn`，编译日志出现内部 `BFLOAT16` �
 
 ## MX4/MX8 与普通 INT4/INT8 的界限
 
-[`info.md`](../info.md) 中的“MX4”是每 2 个值共享 micro-exponent、每 16 个值共享大 exponent 的**两级共享指数示例**，平均 4 bit/值；它**不等于** OCP 标准 MXFP4。OCP [MX v1.0 规范](https://www.opencompute.org/documents/ocp-microscaling-formats-mx-v1-0-spec-final-pdf)列出 MXFP4（FP4 E2M1）、MXFP8（FP8 E4M3/E5M2）、MXINT8：均为 32 元素共享一个 8-bit E8M0 scale，名义有效位宽分别是 `4+8/32=4.25`、`8+8/32=8.25`、`8.25` bit/值，尚未计填充和其他元数据。“MX8”名称本身不足以指定 MXFP8 还是 MXINT8。
+个人学习笔记 中的“MX4”是每 2 个值共享 micro-exponent、每 16 个值共享大 exponent 的**两级共享指数示例**，平均 4 bit/值；它**不等于** OCP 标准 MXFP4。OCP [MX v1.0 规范](https://www.opencompute.org/documents/ocp-microscaling-formats-mx-v1-0-spec-final-pdf)列出 MXFP4（FP4 E2M1）、MXFP8（FP8 E4M3/E5M2）、MXINT8：均为 32 元素共享一个 8-bit E8M0 scale，名义有效位宽分别是 `4+8/32=4.25`、`8+8/32=8.25`、`8.25` bit/值，尚未计填充和其他元数据。“MX8”名称本身不足以指定 MXFP8 还是 MXINT8。
 
 共享 exponent 相对 **16-bit BF16/FP16** 确实可省空间：标准 MXFP8 的理论权重位宽少约 48.4%，MXFP4 少约 73.4%。但相对纯 8-bit 权重，标准 MXFP8 的 `8.25` bit/值**并不更小**；普通 W8 也需要自身 scale 元数据，实际文件须用后端编译产物比较。若采用笔记中的**自定义两级 MX4**，理论为 4 bit/值，仍须实现相应解码和算子，不能按 OCP MXFP4 的支持情况推断。
 
@@ -3343,7 +3343,7 @@ FP对照7/12；历史200轮候选9/12，上轮100轮调整候选8/12。加强探
 
 检查了恰好60%体积的边界、超预算负奖励、失败−1、环境错误排除、未验证默认不评分、代理模式不能宣称deployable六项条件，均通过。当前脚本 `qvla/haq/run_haq_local_loop.py` 使用显式代理模式且保存`backend_feasibility`状态；未接入RKNN转换，**转换失败处罚尚未在真实RL采样中触发或验证**。这不是失败率改善或强化学习效果结果。
 
-下一步须明确本次200轮是先本地代理探索后验证优胜候选，还是先接通逐候选整图转换/运行反馈。前者沿用此前8条搜索开发观测及32条留出、每轮4候选，预计约45–60分钟（按此前30轮约423秒外推，未测）；后者必须补充转换反馈接口，耗时未测。项目`AGENTS.md`要求完整执行/质量/资源反馈前不宣称正式HAQ搜索。
+下一步须明确本次200轮是先本地代理探索后验证优胜候选，还是先接通逐候选整图转换/运行反馈。前者沿用此前8条搜索开发观测及32条留出、每轮4候选，预计约45–60分钟（按此前30轮约423秒外推，未测）；后者必须补充转换反馈接口，耗时未测。项目约定要求完整执行/质量/资源反馈前不宣称正式HAQ搜索。
 
 
 </details>
@@ -6572,7 +6572,7 @@ flowchart LR
 
 后续[真实板端四任务闭环](project-route.md#record-experiments-2026-10-01-board-libero-closed-loop)已完成：四个suite各ID0、seed0/初始状态0，原FP与板端FP16均2/4，成功任务相同，22次板端模型请求p50 7.445s。初始场景与对应噪声hash已配对核对；只支持本轮没有新增失败，不能认定整体质量非劣。仿真暂停等待板端，未验证实时控制。当前基线已有真实闭环执行证据，下一步仍须任意混合精度配置执行/评测接口和扩大开发质量验证，不据此锁定精度或宣布正式HAQ完成。
 
-1. **`info.md` 的基础量化链条**：仿射量化的 scale/zero point；per-tensor、per-channel、group 粒度；激活校准的 min/max、MSE clipping、KL；STE 与 FP master weights 的 QAT；有效位宽；AdaRound。先把这些量化参数、元数据成本和误差统计做成可核查记录。`info.md` 中 MX4、多级 scale、二值化、剪枝是候选知识点，不预设 RK3588 可执行，也不要求一次实验全用上。
+1. **个人学习笔记 的基础量化链条**：仿射量化的 scale/zero point；per-tensor、per-channel、group 粒度；激活校准的 min/max、MSE clipping、KL；STE 与 FP master weights 的 QAT；有效位宽；AdaRound。先把这些量化参数、元数据成本和误差统计做成可核查记录。个人学习笔记 中 MX4、多级 scale、二值化、剪枝是候选知识点，不预设 RK3588 可执行，也不要求一次实验全用上。
 2. **[HAQ, CVPR 2019](https://openaccess.thecvf.com/content_CVPR_2019/html/Wang_HAQ_Hardware-Aware_Automated_Quantization_With_Mixed_Precision_CVPR_2019_paper.html)**：本项目采用强化学习搜索全模型混合精度。每个可独立配置的模型算子/模块都是动作位点，agent 为每个位点选择后端可行精度；人工敏感度结论不固定任何层，也不用于给动作空间降维。先前探索只作评估对照和问题诊断。至少40%文件压缩作为硬条件，效果与查表速度联合优化。当前已有100个基础算子精度签名和18个融合/边界补充项的RK3588成本测量；这些作为成本查询基础，整模型运行图、RAM与端到端动作延迟仍需实测校准。
 3. **可迁移的前沿方法**：借鉴 [QVLA（ICLR 2026）](https://arxiv.org/abs/2602.03782)用最终动作变化评估通道/模块敏感度，借鉴 [QuantVLA（CVPR 2026）](https://arxiv.org/abs/2602.20309)对跨模块 scale 漂移与动作头精度的关注；两篇针对的模型与本项目不同，因此只移植经过 SmolVLA 实验和 RK3588 后端验证的机制。[SmoothQuant](https://proceedings.mlr.press/v202/xiao23c.html) 的等价平滑用于激活 outlier，[AWQ](https://proceedings.mlsys.org/paper_files/paper/2024/file/42a452cbafa9dd64e9ba4aa95cc1ef21-Paper-Conference.pdf) 的激活感知保护用于权重低比特候选。它们都是可验证的候选操作，不默认整套套用。
 
