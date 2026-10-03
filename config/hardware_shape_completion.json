@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "checkpoint_weight_sha256": "9a9f6413e42c0f332fccbce9a0dc796af2790f82cf002f791cdbf7e01e1afca8",
+  "shapes": {
+    "model.action_in_proj": {
+      "input_shape": [1, 50, 32],
+      "evidence": "LeRobot v0.6.1 SmolVLA: noisy action is padded to max_action_dim and action_in_proj is applied over chunk_size; checkpoint config chunk_size=50, max_action_dim=32.",
+      "source": "https://github.com/huggingface/lerobot/blob/v0.6.1/src/lerobot/policies/smolvla/modeling_smolvla.py"
+    },
+    "model.action_out_proj": {
+      "input_shape": [1, 50, 720],
+      "evidence": "LeRobot v0.6.1 SmolVLA: action_out_proj receives expert suffix output sliced to chunk_size=50; expert_hidden_size=720 from checkpoint tensors.",
+      "source": "https://github.com/huggingface/lerobot/blob/v0.6.1/src/lerobot/policies/smolvla/modeling_smolvla.py"
+    },
+    "model.action_time_mlp_in": {
+      "input_shape": [1, 50, 1440],
+      "evidence": "LeRobot v0.6.1 SmolVLA: time embedding expands to action_emb shape [B,50,720], concatenated with action_emb along the last axis.",
+      "source": "https://github.com/huggingface/lerobot/blob/v0.6.1/src/lerobot/policies/smolvla/modeling_smolvla.py"
+    },
+    "model.action_time_mlp_out": {
+      "input_shape": [1, 50, 720],
+      "evidence": "LeRobot v0.6.1 SmolVLA: second action-time projection consumes the first projection output over chunk_size=50 and expert_hidden_size=720.",
+      "source": "https://github.com/huggingface/lerobot/blob/v0.6.1/src/lerobot/policies/smolvla/modeling_smolvla.py"
+    },
+    "model.state_proj": {
+      "input_shape": [1, 32],
+      "evidence": "LeRobot v0.6.1 SmolVLA calls state_proj before adding a sequence dimension; checkpoint max_state_dim=32.",
+      "source": "https://github.com/huggingface/lerobot/blob/v0.6.1/src/lerobot/policies/smolvla/modeling_smolvla.py"
+    },
+    "model.vlm_with_expert.vlm.model.connector.modality_projection.proj": {
+      "input_shape": [1, 64, 12288],
+      "evidence": "Captured real connector inputs in runs/connector_probe_v1/calibration_capture.json; all 40 captured examples have this shape.",
+      "source": "runs/connector_probe_v1/calibration_capture.json"
+    },
+    "model.vlm_with_expert.vlm.model.text_model.layers.3.mlp.down_proj": {
+      "input_shape": [1, 177, 2560],
+      "evidence": "Layer 3 has the same configured MLP dimensions as other text layers; real captured same-family down_proj inputs in runs/mixed_int8_v1/calibration.json have shape [1,177,2560].",
+      "source": "runs/mixed_int8_v1/calibration.json"
+    },
+    "model.vlm_with_expert.vlm.model.text_model.layers.3.mlp.gate_proj": {
+      "input_shape": [1, 177, 960],
+      "evidence": "Layer 3 has the same configured MLP dimensions as other text layers; real captured same-family gate/up inputs in runs/mixed_int8_v1/calibration.json have shape [1,177,960].",
+      "source": "runs/mixed_int8_v1/calibration.json"
+    },
+    "model.vlm_with_expert.vlm.model.text_model.layers.3.mlp.up_proj": {
+      "input_shape": [1, 177, 960],
+      "evidence": "Layer 3 has the same configured MLP dimensions as other text layers; real captured same-family gate/up inputs in runs/mixed_int8_v1/calibration.json have shape [1,177,960].",
+      "source": "runs/mixed_int8_v1/calibration.json"
+    },
+    "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.11.mlp.fc1": {
+      "input_shape": [1, 1024, 768],
+      "evidence": "Layer 11 has the same configured MLP dimensions as other vision layers; real captured same-family fc1 inputs in runs/mixed_int8_v1/calibration.json have shape [1,1024,768].",
+      "source": "runs/mixed_int8_v1/calibration.json"
+    },
+    "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.11.mlp.fc2": {
+      "input_shape": [1, 1024, 3072],
+      "evidence": "Layer 11 has the same configured MLP dimensions as other vision layers; real captured same-family fc2 inputs in runs/mixed_int8_v1/calibration.json have shape [1,1024,3072].",
+      "source": "runs/mixed_int8_v1/calibration.json"
+    },
+    "model.vlm_with_expert.vlm.model.vision_model.embeddings.patch_embedding": {
+      "input_shape": [1, 3, 512, 512],
+      "evidence": "Checkpoint config resize_imgs_with_padding and SmolVLM vision_config both specify 512x512 input; patch_embedding is Conv2d.",
+      "source": "artifacts/transfer/model/config.json; artifacts/transfer/smolvlm2_assets/config.json"
+    }
+  }
+}

@@ -1,0 +1,12 @@
+/.venv/
+/.venv-haq-local/
+/artifacts/
+/data/
+/runs/
+/third_party/
+/openvla-7b-oft-finetuned-libero-10/
+__pycache__/
+*.pyc
+# RKNN Toolkit temporary ONNX dumps generated in the working directory.
+/check[0-9]_*.onnx
+/.venv-teacher/

@@ -1,0 +1,58 @@
+{
+  "scope": "one MLP; host simulator numerical error vs FP32 ONNX",
+  "split": "qat_train",
+  "heldout_samples": 240,
+  "tasks": 40,
+  "methods": {
+    "fp16": {
+      "mean_mae": 8.135016723826993e-05,
+      "min_cosine": 0.9999995231628418,
+      "group_mean_mae": {
+        "frame0_step0": 6.43997140286956e-05,
+        "frame0_step1": 8.029971777432366e-05,
+        "frame0_step2": 9.901161338348175e-05,
+        "frame1_step0": 6.429288423532853e-05,
+        "frame1_step1": 7.997904940566513e-05,
+        "frame1_step2": 0.00010011802460212494
+      }
+    },
+    "int8_normal": {
+      "mean_mae": 0.01144585432872797,
+      "min_cosine": 0.9981591105461121,
+      "group_mean_mae": {
+        "frame0_step0": 0.011173000256530941,
+        "frame0_step1": 0.0112242131261155,
+        "frame0_step2": 0.011897175759077071,
+        "frame1_step0": 0.011181107140146196,
+        "frame1_step1": 0.011225108709186315,
+        "frame1_step2": 0.011974520981311798
+      }
+    },
+    "int8_kl_divergence": {
+      "mean_mae": 0.010845692603227992,
+      "min_cosine": 0.998153567314148,
+      "group_mean_mae": {
+        "frame0_step0": 0.009018916659988463,
+        "frame0_step1": 0.010080773825757205,
+        "frame0_step2": 0.014740602765232324,
+        "frame1_step0": 0.009072270360775292,
+        "frame1_step1": 0.009984223055653274,
+        "frame1_step2": 0.012177368951961398
+      }
+    },
+    "int8_mmse": {
+      "mean_mae": 0.009419486617359023,
+      "min_cosine": 0.9988207221031189,
+      "group_mean_mae": {
+        "frame0_step0": 0.008906453452073037,
+        "frame0_step1": 0.009064449300058185,
+        "frame0_step2": 0.010482534603215753,
+        "frame1_step0": 0.008908263104967774,
+        "frame1_step1": 0.009068098641000688,
+        "frame1_step2": 0.010087120602838695
+      }
+    }
+  },
+  "mmse_better_than_normal_tasks": 40,
+  "mmse_better_than_kl_tasks": 40
+}

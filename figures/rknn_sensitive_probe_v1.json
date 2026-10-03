@@ -1,0 +1,66 @@
+[
+  {
+    "module": "vision 10",
+    "mode": "FP16",
+    "mean_mae": 0.00015129796884139068,
+    "mean_cosine": 0.999997466802597,
+    "samples": 4,
+    "source": "runs/rknn_vision10_fp16_probe/parity.json"
+  },
+  {
+    "module": "vision 10",
+    "mode": "INT8 MMSE",
+    "mean_mae": 0.013935733819380403,
+    "mean_cosine": 0.9992677718400955,
+    "samples": 4,
+    "source": "runs/rknn_vision10_int8_probe/parity.json"
+  },
+  {
+    "module": "vision 11",
+    "mode": "FP16",
+    "mean_mae": 0.0005014653725083917,
+    "mean_cosine": 0.9999995827674866,
+    "samples": 4,
+    "source": "runs/rknn_vision11_fp16_probe/parity.json"
+  },
+  {
+    "module": "vision 11",
+    "mode": "INT8 MMSE",
+    "mean_mae": 0.48282095789909363,
+    "mean_cosine": 0.9233427047729492,
+    "samples": 4,
+    "source": "runs/rknn_vision11_int8_probe/parity.json"
+  },
+  {
+    "module": "language 3",
+    "mode": "FP16",
+    "mean_mae": 0.0004784273114637472,
+    "mean_cosine": 0.9999998658895493,
+    "samples": 4,
+    "source": "runs/rknn_language3_fp16_probe/parity.json"
+  },
+  {
+    "module": "language 3",
+    "mode": "INT8 MMSE",
+    "mean_mae": 0.8126401603221893,
+    "mean_cosine": 0.8588290214538574,
+    "samples": 4,
+    "source": "runs/rknn_language3_int8_probe/parity.json"
+  },
+  {
+    "module": "language 4",
+    "mode": "FP16",
+    "mean_mae": 0.00044507006532512605,
+    "mean_cosine": 0.9999991804361343,
+    "samples": 4,
+    "source": "runs/rknn_language4_fp16_probe/parity.json"
+  },
+  {
+    "module": "language 4",
+    "mode": "INT8 MMSE",
+    "mean_mae": 0.06608335301280022,
+    "mean_cosine": 0.997557520866394,
+    "samples": 4,
+    "source": "runs/rknn_language4_int8_probe/parity.json"
+  }
+]

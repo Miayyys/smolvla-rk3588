@@ -1,0 +1,68 @@
+{
+  "scope": "sampled calibration reconstruction vs paired action error",
+  "calibration_sampling": "deterministic stride, at most 2048 output values per module call",
+  "not_real_quantization": true,
+  "groups": {
+    "vision_6_11": {
+      "median_sample_mse_ratio_by_retained_fraction": [
+        2.5769419273382805,
+        1.3121668209691966,
+        0.7282023612800647,
+        0.2113222771654581,
+        0.116100478776648,
+        0.05021356130428167,
+        1.0
+      ],
+      "chosen_retained_fraction_per_module": {
+        "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.6.mlp": 0.9999,
+        "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.7.mlp": 0.9999,
+        "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.8.mlp": 0.9999,
+        "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.9.mlp": 0.9999,
+        "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.10.mlp": 0.9999,
+        "model.vlm_with_expert.vlm.model.vision_model.encoder.layers.11.mlp": 0.9999
+      },
+      "minmax_action_mae": 0.03016008929698728,
+      "mse_action_mae": 0.028245519375195725,
+      "mse_better_frames": 48,
+      "paired_frames": 80,
+      "minmax_recorded_action_delta": 0.01367787925992161,
+      "mse_recorded_action_delta": 0.01583666931837797
+    },
+    "language_0_7": {
+      "median_sample_mse_ratio_by_retained_fraction": [
+        3.8915357633200682,
+        2.139457501723917,
+        0.9740963066714527,
+        0.17014604657903187,
+        0.0955058017685972,
+        0.05039719281483713,
+        1.0
+      ],
+      "chosen_retained_fraction_per_module": {
+        "model.vlm_with_expert.vlm.model.text_model.layers.0.mlp": 0.9995,
+        "model.vlm_with_expert.vlm.model.text_model.layers.1.mlp": 0.9999,
+        "model.vlm_with_expert.vlm.model.text_model.layers.2.mlp": 0.9999,
+        "model.vlm_with_expert.vlm.model.text_model.layers.3.mlp": 1.0,
+        "model.vlm_with_expert.vlm.model.text_model.layers.4.mlp": 0.9999,
+        "model.vlm_with_expert.vlm.model.text_model.layers.5.mlp": 0.9999,
+        "model.vlm_with_expert.vlm.model.text_model.layers.6.mlp": 0.9999,
+        "model.vlm_with_expert.vlm.model.text_model.layers.7.mlp": 0.9999
+      },
+      "minmax_action_mae": 0.018172614451032132,
+      "mse_action_mae": 0.02445849725336302,
+      "mse_better_frames": 8,
+      "paired_frames": 80,
+      "minmax_recorded_action_delta": 0.0008772641245741397,
+      "mse_recorded_action_delta": 0.0017841982597019523
+    }
+  },
+  "retained_fractions": [
+    0.98,
+    0.99,
+    0.995,
+    0.999,
+    0.9995,
+    0.9999,
+    1.0
+  ]
+}

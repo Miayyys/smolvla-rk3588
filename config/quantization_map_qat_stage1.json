@@ -1,0 +1,38 @@
+{
+  "version": "qat-stage1-expert-w8a8-intent-2026-09-27",
+  "status": "locked_initial_qat_experiment_target_not_final_rk3588_map",
+  "source_map": "config/quantization_map_v0.json",
+  "source_weight_sha256": "9a9f6413e42c0f332fccbce9a0dc796af2790f82cf002f791cdbf7e01e1afca8",
+  "evaluation_partition_sha256": "f755546a6b074d2fe248333fc42c3dbf30f9b54b9f0fa0b58a16506a54d942c2",
+  "selected_groups": [
+    "expert_attention_0_7",
+    "expert_attention_8_15",
+    "expert_mlp_0_7",
+    "expert_mlp_8_15"
+  ],
+  "selected_source_weight_bytes": 199720960,
+  "selected_linear_count": 112,
+  "all_other_groups": "preserve_original_loaded_runtime_behavior_in_stage1",
+  "qat_fake_quant_intent": {
+    "weights": "symmetric_signed_int8_per_output_channel",
+    "activation": "static_int8_per_tensor_from_disjoint_ptq_calibration_episodes",
+    "master_weights": "floating_point",
+    "training_gradient": "straight_through_estimator",
+    "activation_clipping_candidates": ["minmax", "rk3588_mmse_parity_check"],
+    "initial_noise": "fixed_for_paired_development_evaluation"
+  },
+  "real_conversion": {
+    "qat": "export_trained_float_master_without_fake_quant_then_rknn_w8a8_calibration_and_build",
+    "ptq": "export_original_fp_checkpoint_then_same_rknn_w8a8_calibration_and_build",
+    "quantized_method": "channel",
+    "quantized_dtype": "w8a8",
+    "quantized_algorithm_initial": "mmse",
+    "no_double_ptq": true,
+    "direct_qdq_or_quantized_torchscript": "rejected_for_stage1_because_probe_lowered_weight_to_fp16"
+  },
+  "acceptance": "paired_closed_loop_quality_gate_then_real_board_RAM_p95_latency_and_deployment_bytes",
+  "stages_after_first": [
+    "test_late_vision_language_extension_on_development_episodes",
+    "challenge_sensitive_and_unprobed_groups_only_if_quality_and_hardware_require"
+  ]
+}

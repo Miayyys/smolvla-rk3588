@@ -1,0 +1,25 @@
+{
+  "scope": "paired full-action-chunk error under output fake INT8",
+  "not_real_quantization": true,
+  "not_closed_loop": true,
+  "development_samples": 80,
+  "groups": {
+    "vision_6_11": {
+      "title": "Vision MLP 6\u201311",
+      "all_layers_mae": 0.03016008929698728,
+      "sensitive_layer_mae": 0.02989958628313616,
+      "other_layers_mae": 0.00170584352381411,
+      "sensitive_layer": "vision_11_only",
+      "other_layers": "vision_6_10"
+    },
+    "language_0_7": {
+      "title": "Language MLP 0\u20137",
+      "all_layers_mae": 0.018172614451032132,
+      "sensitive_layer_mae": 0.0173067361683934,
+      "other_layers_mae": 0.00415925839333795,
+      "sensitive_layer": "language_3_only",
+      "other_layers": "language_0_2_4_7"
+    }
+  },
+  "combined_12_layer_mae": 0.004317037902364973
+}

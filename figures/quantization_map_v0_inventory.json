@@ -1,0 +1,262 @@
+{
+  "scope": "source_safetensors_inventory_only_not_quantization_benefit",
+  "map_version": "candidate-v0-2026-09-27",
+  "checkpoint_weight_sha256": "9a9f6413e42c0f332fccbce9a0dc796af2790f82cf002f791cdbf7e01e1afca8",
+  "source_file_bytes": 906712520,
+  "source_payload_bytes": 906639456,
+  "source_tensor_count": 500,
+  "groups": {
+    "vision_patch": {
+      "source_tensor_count": 2,
+      "source_elements": 590592,
+      "source_payload_bytes": 1181184,
+      "source_dtypes": {
+        "BF16": 2
+      },
+      "v0_format": "native",
+      "next_probe": "w8a8"
+    },
+    "vision_position": {
+      "source_tensor_count": 1,
+      "source_elements": 786432,
+      "source_payload_bytes": 1572864,
+      "source_dtypes": {
+        "BF16": 1
+      },
+      "v0_format": "native",
+      "next_probe": "keep_float"
+    },
+    "vision_attention_0_5": {
+      "source_tensor_count": 48,
+      "source_elements": 14174208,
+      "source_payload_bytes": 28348416,
+      "source_dtypes": {
+        "BF16": 48
+      },
+      "v0_format": "w8a8",
+      "next_probe": "real_full_action"
+    },
+    "vision_attention_6_11": {
+      "source_tensor_count": 48,
+      "source_elements": 14174208,
+      "source_payload_bytes": 28348416,
+      "source_dtypes": {
+        "BF16": 48
+      },
+      "v0_format": "w8a8",
+      "next_probe": "real_full_action"
+    },
+    "vision_mlp_0_5": {
+      "source_tensor_count": 24,
+      "source_elements": 28334592,
+      "source_payload_bytes": 56669184,
+      "source_dtypes": {
+        "BF16": 24
+      },
+      "v0_format": "w8a8",
+      "next_probe": "real_full_action"
+    },
+    "vision_mlp_6_10": {
+      "source_tensor_count": 20,
+      "source_elements": 23612160,
+      "source_payload_bytes": 47224320,
+      "source_dtypes": {
+        "BF16": 20
+      },
+      "v0_format": "w8a8",
+      "next_probe": "real_full_action"
+    },
+    "vision_mlp_11": {
+      "source_tensor_count": 4,
+      "source_elements": 4722432,
+      "source_payload_bytes": 9444864,
+      "source_dtypes": {
+        "BF16": 4
+      },
+      "v0_format": "fp16",
+      "next_probe": "compare_real_w8a8_with_float"
+    },
+    "vision_norm": {
+      "source_tensor_count": 50,
+      "source_elements": 38400,
+      "source_payload_bytes": 76800,
+      "source_dtypes": {
+        "BF16": 50
+      },
+      "v0_format": "native",
+      "next_probe": "float_export"
+    },
+    "connector": {
+      "source_tensor_count": 1,
+      "source_elements": 11796480,
+      "source_payload_bytes": 23592960,
+      "source_dtypes": {
+        "BF16": 1
+      },
+      "v0_format": "native",
+      "next_probe": "w8a8_and_interface_test"
+    },
+    "language_embedding": {
+      "source_tensor_count": 1,
+      "source_elements": 47308800,
+      "source_payload_bytes": 94617600,
+      "source_dtypes": {
+        "BF16": 1
+      },
+      "v0_format": "native",
+      "next_probe": "liveness_and_weight_only_test"
+    },
+    "language_attention_0_7": {
+      "source_tensor_count": 32,
+      "source_elements": 19660800,
+      "source_payload_bytes": 39321600,
+      "source_dtypes": {
+        "BF16": 32
+      },
+      "v0_format": "w8a8",
+      "next_probe": "real_full_action_tail"
+    },
+    "language_attention_8_15": {
+      "source_tensor_count": 32,
+      "source_elements": 19660800,
+      "source_payload_bytes": 39321600,
+      "source_dtypes": {
+        "BF16": 32
+      },
+      "v0_format": "w8a8",
+      "next_probe": "real_full_action"
+    },
+    "language_mlp_0_2": {
+      "source_tensor_count": 9,
+      "source_elements": 22118400,
+      "source_payload_bytes": 44236800,
+      "source_dtypes": {
+        "BF16": 9
+      },
+      "v0_format": "w8a8",
+      "next_probe": "real_full_action_tail"
+    },
+    "language_mlp_3": {
+      "source_tensor_count": 3,
+      "source_elements": 7372800,
+      "source_payload_bytes": 14745600,
+      "source_dtypes": {
+        "BF16": 3
+      },
+      "v0_format": "bf16",
+      "next_probe": "compare_real_w8a8_with_float"
+    },
+    "language_mlp_4_7": {
+      "source_tensor_count": 12,
+      "source_elements": 29491200,
+      "source_payload_bytes": 58982400,
+      "source_dtypes": {
+        "BF16": 12
+      },
+      "v0_format": "w8a8",
+      "next_probe": "real_full_action"
+    },
+    "language_mlp_8_15": {
+      "source_tensor_count": 24,
+      "source_elements": 58982400,
+      "source_payload_bytes": 117964800,
+      "source_dtypes": {
+        "BF16": 24
+      },
+      "v0_format": "w8a8",
+      "next_probe": "real_full_action"
+    },
+    "language_norm": {
+      "source_tensor_count": 33,
+      "source_elements": 31680,
+      "source_payload_bytes": 63360,
+      "source_dtypes": {
+        "BF16": 33
+      },
+      "v0_format": "native",
+      "next_probe": "float_export"
+    },
+    "lm_head": {
+      "source_tensor_count": 1,
+      "source_elements": 47308800,
+      "source_payload_bytes": 94617600,
+      "source_dtypes": {
+        "BF16": 1
+      },
+      "v0_format": "native",
+      "next_probe": "prove_action_path_liveness_and_tied_weights"
+    },
+    "expert_attention_0_7": {
+      "source_tensor_count": 32,
+      "source_elements": 13721600,
+      "source_payload_bytes": 29081600,
+      "source_dtypes": {
+        "F32": 8,
+        "BF16": 24
+      },
+      "v0_format": "w8a8",
+      "next_probe": "real_full_action"
+    },
+    "expert_attention_8_15": {
+      "source_tensor_count": 32,
+      "source_elements": 13721600,
+      "source_payload_bytes": 29081600,
+      "source_dtypes": {
+        "F32": 8,
+        "BF16": 24
+      },
+      "v0_format": "w8a8",
+      "next_probe": "real_full_action"
+    },
+    "expert_mlp_0_7": {
+      "source_tensor_count": 24,
+      "source_elements": 35389440,
+      "source_payload_bytes": 70778880,
+      "source_dtypes": {
+        "BF16": 24
+      },
+      "v0_format": "w8a8",
+      "next_probe": "real_full_action"
+    },
+    "expert_mlp_8_15": {
+      "source_tensor_count": 24,
+      "source_elements": 35389440,
+      "source_payload_bytes": 70778880,
+      "source_dtypes": {
+        "BF16": 24
+      },
+      "v0_format": "w8a8",
+      "next_probe": "real_full_action"
+    },
+    "expert_norm": {
+      "source_tensor_count": 33,
+      "source_elements": 23760,
+      "source_payload_bytes": 47520,
+      "source_dtypes": {
+        "BF16": 33
+      },
+      "v0_format": "native",
+      "next_probe": "float_export"
+    },
+    "action_time_mlp": {
+      "source_tensor_count": 4,
+      "source_elements": 1556640,
+      "source_payload_bytes": 6226560,
+      "source_dtypes": {
+        "F32": 4
+      },
+      "v0_format": "native",
+      "next_probe": "real_w8a8_sensitivity"
+    },
+    "action_interface": {
+      "source_tensor_count": 6,
+      "source_elements": 78512,
+      "source_payload_bytes": 314048,
+      "source_dtypes": {
+        "F32": 6
+      },
+      "v0_format": "native",
+      "next_probe": "keep_float_then_test"
+    }
+  }
+}

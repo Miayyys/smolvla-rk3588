@@ -1,0 +1,114 @@
+{
+  "scope": "correct separate-input odd expert K/V, RK3588 host simulator",
+  "source_report": "figures/expert_odd_kv_correct_w8a8_v4.json",
+  "development_inputs_per_projection": 240,
+  "layers": [
+    1,
+    3,
+    5,
+    7,
+    9,
+    11,
+    13,
+    15
+  ],
+  "by_kind": {
+    "k": {
+      "ptq_mean_mae": 0.028165211839950643,
+      "qat_mean_mae": 0.028099852896411905,
+      "qat_lower_mae_layers": 5,
+      "ptq_lower_mae_layers": 3,
+      "per_layer": [
+        {
+          "layer": 1,
+          "ptq_mae": 0.031551348674111065,
+          "qat_mae": 0.03155399742536247
+        },
+        {
+          "layer": 3,
+          "ptq_mae": 0.01860318789258599,
+          "qat_mae": 0.01808034994173795
+        },
+        {
+          "layer": 5,
+          "ptq_mae": 0.019712878251448275,
+          "qat_mae": 0.019708259007893504
+        },
+        {
+          "layer": 7,
+          "ptq_mae": 0.02149084392003715,
+          "qat_mae": 0.02149048082064837
+        },
+        {
+          "layer": 9,
+          "ptq_mae": 0.021427760366350412,
+          "qat_mae": 0.02143371240235865
+        },
+        {
+          "layer": 11,
+          "ptq_mae": 0.03465366829186678,
+          "qat_mae": 0.034649905981495976
+        },
+        {
+          "layer": 13,
+          "ptq_mae": 0.04062826787121594,
+          "qat_mae": 0.040628606593236326
+        },
+        {
+          "layer": 15,
+          "ptq_mae": 0.03725373945198953,
+          "qat_mae": 0.03725351099856198
+        }
+      ]
+    },
+    "v": {
+      "ptq_mean_mae": 0.0075645819328201466,
+      "qat_mean_mae": 0.00756460931879701,
+      "qat_lower_mae_layers": 3,
+      "ptq_lower_mae_layers": 5,
+      "per_layer": [
+        {
+          "layer": 1,
+          "ptq_mae": 0.004158922529313713,
+          "qat_mae": 0.0041577798838261515
+        },
+        {
+          "layer": 3,
+          "ptq_mae": 0.0054546909756027166,
+          "qat_mae": 0.005455122637795284
+        },
+        {
+          "layer": 5,
+          "ptq_mae": 0.008869699446950107,
+          "qat_mae": 0.008869751077145337
+        },
+        {
+          "layer": 7,
+          "ptq_mae": 0.0067861947522033,
+          "qat_mae": 0.006786222301889211
+        },
+        {
+          "layer": 9,
+          "ptq_mae": 0.00775105258799158,
+          "qat_mae": 0.007749061705544591
+        },
+        {
+          "layer": 11,
+          "ptq_mae": 0.010047025419771672,
+          "qat_mae": 0.010045805375557392
+        },
+        {
+          "layer": 13,
+          "ptq_mae": 0.00758536386420019,
+          "qat_mae": 0.007586306426674128
+        },
+        {
+          "layer": 15,
+          "ptq_mae": 0.009863705886527897,
+          "qat_mae": 0.00986682514194399
+        }
+      ]
+    }
+  },
+  "plot": "figures/expert_attention_kv_corrected_v4.png"
+}

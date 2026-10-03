@@ -1,0 +1,367 @@
+{
+  "scope": "full action path, 40 development tasks, fake W8A8 diagnostic only",
+  "mean_first_action_mae_vs_recorded": {
+    "original": 0.0309859998524189,
+    "ptq_fake": 0.031081175431609154,
+    "qat_fake": 0.030830780044198036,
+    "qat_master": 0.03093670681118965
+  },
+  "paired_first_action_mae": {
+    "qat_fake_minus_original": {
+      "mean": -0.00015522046305704862,
+      "tasks_lower": 24,
+      "task_bootstrap_95_ci": [
+        -0.0004773099783051293,
+        0.0001838614076405062
+      ]
+    },
+    "qat_fake_minus_ptq_fake": {
+      "mean": -0.00025039768661372364,
+      "tasks_lower": 26,
+      "task_bootstrap_95_ci": [
+        -0.0005422473550424911,
+        4.181709455224331e-05
+      ]
+    },
+    "ptq_fake_minus_original": {
+      "mean": 9.517723083263263e-05,
+      "tasks_lower": 19,
+      "task_bootstrap_95_ci": [
+        -0.0001743277516652597,
+        0.00036896443416480903
+      ]
+    }
+  },
+  "chunk_mae_vs_original": {
+    "original": 0.0,
+    "ptq_fake": 0.0019418381853029132,
+    "qat_fake": 0.002363868523389101,
+    "qat_master": 0.0005600561271421611
+  },
+  "per_task": [
+    {
+      "task": 0,
+      "episode": 18,
+      "original_first_action_mae": 0.03181948885321617,
+      "ptq_fake_first_action_mae": 0.03292907401919365,
+      "qat_fake_first_action_mae": 0.03330079838633537,
+      "qat_master_first_action_mae": 0.031982842832803726
+    },
+    {
+      "task": 1,
+      "episode": 1,
+      "original_first_action_mae": 0.023278791457414627,
+      "ptq_fake_first_action_mae": 0.023787081241607666,
+      "qat_fake_first_action_mae": 0.023696986958384514,
+      "qat_master_first_action_mae": 0.023304356262087822
+    },
+    {
+      "task": 2,
+      "episode": 3,
+      "original_first_action_mae": 0.03599836677312851,
+      "ptq_fake_first_action_mae": 0.034448541700839996,
+      "qat_fake_first_action_mae": 0.03358893468976021,
+      "qat_master_first_action_mae": 0.03557060286402702
+    },
+    {
+      "task": 3,
+      "episode": 6,
+      "original_first_action_mae": 0.01635046862065792,
+      "ptq_fake_first_action_mae": 0.016609998419880867,
+      "qat_fake_first_action_mae": 0.016137730330228806,
+      "qat_master_first_action_mae": 0.01630081795156002
+    },
+    {
+      "task": 4,
+      "episode": 7,
+      "original_first_action_mae": 0.04123538359999657,
+      "ptq_fake_first_action_mae": 0.04086705297231674,
+      "qat_fake_first_action_mae": 0.04151737317442894,
+      "qat_master_first_action_mae": 0.040991149842739105
+    },
+    {
+      "task": 5,
+      "episode": 8,
+      "original_first_action_mae": 0.012037110514938831,
+      "ptq_fake_first_action_mae": 0.012336677871644497,
+      "qat_fake_first_action_mae": 0.011230760253965855,
+      "qat_master_first_action_mae": 0.011466865427792072
+    },
+    {
+      "task": 6,
+      "episode": 10,
+      "original_first_action_mae": 0.038931142538785934,
+      "ptq_fake_first_action_mae": 0.037857796996831894,
+      "qat_fake_first_action_mae": 0.038445573300123215,
+      "qat_master_first_action_mae": 0.038545042276382446
+    },
+    {
+      "task": 7,
+      "episode": 12,
+      "original_first_action_mae": 0.033956654369831085,
+      "ptq_fake_first_action_mae": 0.03335393965244293,
+      "qat_fake_first_action_mae": 0.03191959857940674,
+      "qat_master_first_action_mae": 0.03363412991166115
+    },
+    {
+      "task": 8,
+      "episode": 14,
+      "original_first_action_mae": 0.029381340369582176,
+      "ptq_fake_first_action_mae": 0.03070039488375187,
+      "qat_fake_first_action_mae": 0.031122449785470963,
+      "qat_master_first_action_mae": 0.029636934399604797
+    },
+    {
+      "task": 9,
+      "episode": 27,
+      "original_first_action_mae": 0.014586620964109898,
+      "ptq_fake_first_action_mae": 0.016088413074612617,
+      "qat_fake_first_action_mae": 0.016516240313649178,
+      "qat_master_first_action_mae": 0.014712621457874775
+    },
+    {
+      "task": 10,
+      "episode": 379,
+      "original_first_action_mae": 0.021342704072594643,
+      "ptq_fake_first_action_mae": 0.020227253437042236,
+      "qat_fake_first_action_mae": 0.02021181397140026,
+      "qat_master_first_action_mae": 0.02157878316938877
+    },
+    {
+      "task": 11,
+      "episode": 381,
+      "original_first_action_mae": 0.026410074904561043,
+      "ptq_fake_first_action_mae": 0.026527848094701767,
+      "qat_fake_first_action_mae": 0.024587800726294518,
+      "qat_master_first_action_mae": 0.02643909677863121
+    },
+    {
+      "task": 12,
+      "episode": 382,
+      "original_first_action_mae": 0.028124967589974403,
+      "ptq_fake_first_action_mae": 0.030436817556619644,
+      "qat_fake_first_action_mae": 0.029588544741272926,
+      "qat_master_first_action_mae": 0.028353972360491753
+    },
+    {
+      "task": 13,
+      "episode": 384,
+      "original_first_action_mae": 0.048958610743284225,
+      "ptq_fake_first_action_mae": 0.049058374017477036,
+      "qat_fake_first_action_mae": 0.048581015318632126,
+      "qat_master_first_action_mae": 0.04847365617752075
+    },
+    {
+      "task": 14,
+      "episode": 385,
+      "original_first_action_mae": 0.03164351359009743,
+      "ptq_fake_first_action_mae": 0.031194886192679405,
+      "qat_fake_first_action_mae": 0.031132204458117485,
+      "qat_master_first_action_mae": 0.03155893459916115
+    },
+    {
+      "task": 15,
+      "episode": 386,
+      "original_first_action_mae": 0.019932961091399193,
+      "ptq_fake_first_action_mae": 0.02097618766129017,
+      "qat_fake_first_action_mae": 0.022076724097132683,
+      "qat_master_first_action_mae": 0.02074982412159443
+    },
+    {
+      "task": 16,
+      "episode": 388,
+      "original_first_action_mae": 0.05870864540338516,
+      "ptq_fake_first_action_mae": 0.05789675563573837,
+      "qat_fake_first_action_mae": 0.05844517797231674,
+      "qat_master_first_action_mae": 0.05844758078455925
+    },
+    {
+      "task": 17,
+      "episode": 394,
+      "original_first_action_mae": 0.014697383157908916,
+      "ptq_fake_first_action_mae": 0.014018682762980461,
+      "qat_fake_first_action_mae": 0.013958497904241085,
+      "qat_master_first_action_mae": 0.014484728686511517
+    },
+    {
+      "task": 18,
+      "episode": 444,
+      "original_first_action_mae": 0.019856583327054977,
+      "ptq_fake_first_action_mae": 0.02035270631313324,
+      "qat_fake_first_action_mae": 0.01975841633975506,
+      "qat_master_first_action_mae": 0.020091330632567406
+    },
+    {
+      "task": 19,
+      "episode": 399,
+      "original_first_action_mae": 0.05771695822477341,
+      "ptq_fake_first_action_mae": 0.058091528713703156,
+      "qat_fake_first_action_mae": 0.05794414505362511,
+      "qat_master_first_action_mae": 0.05761367082595825
+    },
+    {
+      "task": 20,
+      "episode": 829,
+      "original_first_action_mae": 0.02703840844333172,
+      "ptq_fake_first_action_mae": 0.027050497010350227,
+      "qat_fake_first_action_mae": 0.025954594835639,
+      "qat_master_first_action_mae": 0.02659090980887413
+    },
+    {
+      "task": 21,
+      "episode": 808,
+      "original_first_action_mae": 0.03311428427696228,
+      "ptq_fake_first_action_mae": 0.03423722833395004,
+      "qat_fake_first_action_mae": 0.0322914645075798,
+      "qat_master_first_action_mae": 0.032888904213905334
+    },
+    {
+      "task": 22,
+      "episode": 810,
+      "original_first_action_mae": 0.03185168653726578,
+      "ptq_fake_first_action_mae": 0.030926810577511787,
+      "qat_fake_first_action_mae": 0.032853636890649796,
+      "qat_master_first_action_mae": 0.032345157116651535
+    },
+    {
+      "task": 23,
+      "episode": 811,
+      "original_first_action_mae": 0.01107565127313137,
+      "ptq_fake_first_action_mae": 0.01196188386529684,
+      "qat_fake_first_action_mae": 0.011335902847349644,
+      "qat_master_first_action_mae": 0.011038021184504032
+    },
+    {
+      "task": 24,
+      "episode": 813,
+      "original_first_action_mae": 0.0408603735268116,
+      "ptq_fake_first_action_mae": 0.040814824402332306,
+      "qat_fake_first_action_mae": 0.04034909978508949,
+      "qat_master_first_action_mae": 0.04088795930147171
+    },
+    {
+      "task": 25,
+      "episode": 814,
+      "original_first_action_mae": 0.027351155877113342,
+      "ptq_fake_first_action_mae": 0.02703789435327053,
+      "qat_fake_first_action_mae": 0.027171453461050987,
+      "qat_master_first_action_mae": 0.02749958261847496
+    },
+    {
+      "task": 26,
+      "episode": 816,
+      "original_first_action_mae": 0.01825893297791481,
+      "ptq_fake_first_action_mae": 0.018707318231463432,
+      "qat_fake_first_action_mae": 0.017660828307271004,
+      "qat_master_first_action_mae": 0.018008878454566002
+    },
+    {
+      "task": 27,
+      "episode": 827,
+      "original_first_action_mae": 0.028693322092294693,
+      "ptq_fake_first_action_mae": 0.02847186103463173,
+      "qat_fake_first_action_mae": 0.0290516447275877,
+      "qat_master_first_action_mae": 0.028696607798337936
+    },
+    {
+      "task": 28,
+      "episode": 821,
+      "original_first_action_mae": 0.018651623278856277,
+      "ptq_fake_first_action_mae": 0.01991925574839115,
+      "qat_fake_first_action_mae": 0.017629234120249748,
+      "qat_master_first_action_mae": 0.018373221158981323
+    },
+    {
+      "task": 29,
+      "episode": 826,
+      "original_first_action_mae": 0.02296445146203041,
+      "ptq_fake_first_action_mae": 0.022777022793889046,
+      "qat_fake_first_action_mae": 0.021656448021531105,
+      "qat_master_first_action_mae": 0.022285250946879387
+    },
+    {
+      "task": 30,
+      "episode": 1261,
+      "original_first_action_mae": 0.05668149143457413,
+      "ptq_fake_first_action_mae": 0.05733107402920723,
+      "qat_fake_first_action_mae": 0.0574549175798893,
+      "qat_master_first_action_mae": 0.05688617005944252
+    },
+    {
+      "task": 31,
+      "episode": 1262,
+      "original_first_action_mae": 0.036046724766492844,
+      "ptq_fake_first_action_mae": 0.036013782024383545,
+      "qat_fake_first_action_mae": 0.0347927063703537,
+      "qat_master_first_action_mae": 0.0355609729886055
+    },
+    {
+      "task": 32,
+      "episode": 1264,
+      "original_first_action_mae": 0.024756019935011864,
+      "ptq_fake_first_action_mae": 0.024489358067512512,
+      "qat_fake_first_action_mae": 0.024124834686517715,
+      "qat_master_first_action_mae": 0.02470685914158821
+    },
+    {
+      "task": 33,
+      "episode": 1267,
+      "original_first_action_mae": 0.01675262674689293,
+      "ptq_fake_first_action_mae": 0.016694325953722,
+      "qat_fake_first_action_mae": 0.016053112223744392,
+      "qat_master_first_action_mae": 0.016908636316657066
+    },
+    {
+      "task": 34,
+      "episode": 1272,
+      "original_first_action_mae": 0.021793575957417488,
+      "ptq_fake_first_action_mae": 0.02341613546013832,
+      "qat_fake_first_action_mae": 0.023389995098114014,
+      "qat_master_first_action_mae": 0.021924959495663643
+    },
+    {
+      "task": 35,
+      "episode": 1278,
+      "original_first_action_mae": 0.05831626057624817,
+      "ptq_fake_first_action_mae": 0.05840742215514183,
+      "qat_fake_first_action_mae": 0.05868229269981384,
+      "qat_master_first_action_mae": 0.05843299999833107
+    },
+    {
+      "task": 36,
+      "episode": 1280,
+      "original_first_action_mae": 0.01683349907398224,
+      "ptq_fake_first_action_mae": 0.01592937670648098,
+      "qat_fake_first_action_mae": 0.017337819561362267,
+      "qat_master_first_action_mae": 0.017379503697156906
+    },
+    {
+      "task": 37,
+      "episode": 1286,
+      "original_first_action_mae": 0.045994725078344345,
+      "ptq_fake_first_action_mae": 0.0452226959168911,
+      "qat_fake_first_action_mae": 0.044755492359399796,
+      "qat_master_first_action_mae": 0.04604196175932884
+    },
+    {
+      "task": 38,
+      "episode": 1283,
+      "original_first_action_mae": 0.03657843545079231,
+      "ptq_fake_first_action_mae": 0.03670313581824303,
+      "qat_fake_first_action_mae": 0.035736169666051865,
+      "qat_master_first_action_mae": 0.0360618494451046
+    },
+    {
+      "task": 39,
+      "episode": 1290,
+      "original_first_action_mae": 0.06085896119475365,
+      "ptq_fake_first_action_mae": 0.059375155717134476,
+      "qat_fake_first_action_mae": 0.061188727617263794,
+      "qat_master_first_action_mae": 0.0610128678381443
+    }
+  ],
+  "source_report": "runs/stage1_action_proxy_v1/report.json",
+  "actions_sha256": "639618dab4bb2ef4ed0dbfda24ab30fb8cdfccfcb87411a2527f2fcbd5318451",
+  "bootstrap_seed": 0,
+  "bootstrap_replicates": 10000
+}

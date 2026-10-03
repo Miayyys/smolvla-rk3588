@@ -1,0 +1,8 @@
+{
+  "source_sha256": {
+    "runs/distill_real_teacher_evidence_v1/development_lr1e5/full_chunks.json": "574e129db7b010ed003493a08e4ba4ec60792c5ed290012c3ca8dfd26e427413",
+    "runs/distill_real_teacher_evidence_v1/development_lr1e7/full_chunks.json": "3aabf18c19a58df6717d8806bc906bc7a4024316ea2fcf8ec25411c59b1301cc",
+    "runs/distill_real_teacher_evidence_v1/closed_loop/summary.json": "5d27a9ff8152610b01c6d7b67df05c54187e24ea26075d0098184ec121d61ac6"
+  },
+  "scope": "measured_offline_action_errors_not_closed_loop_quality"
+}

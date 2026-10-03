@@ -1,0 +1,43 @@
+{
+  "summary_sha256": "3b21ff6c003540367a47aa17c89db5313e212e2da1da68769ac7f3e6605fcf6b",
+  "pairs": [
+    {
+      "suite": "libero_spatial",
+      "task_id": 0,
+      "fp_success": true,
+      "board_success": true,
+      "fp_steps": 78,
+      "board_steps": 79
+    },
+    {
+      "suite": "libero_object",
+      "task_id": 0,
+      "fp_success": true,
+      "board_success": true,
+      "fp_steps": 125,
+      "board_steps": 125
+    },
+    {
+      "suite": "libero_goal",
+      "task_id": 0,
+      "fp_success": false,
+      "board_success": false,
+      "fp_steps": 300,
+      "board_steps": 300
+    },
+    {
+      "suite": "libero_10",
+      "task_id": 0,
+      "fp_success": false,
+      "board_success": false,
+      "fp_steps": 520,
+      "board_steps": 520
+    }
+  ],
+  "video_hashes": {
+    "runs/smolvla_board_libero_v1/board_libero_spatial_0/rollout.mp4": "48ce5614f72f42a50328a7f75fc43a46778171a9949e70c91c5fe7e28fc66650",
+    "runs/smolvla_board_libero_v1/board_libero_object_0/rollout.mp4": "d3ed8367cca7888f45bde83821ab567ddd464592b3df5a36ed20d2b97f6b810b",
+    "runs/smolvla_board_libero_v1/board_libero_goal_0/rollout.mp4": "e047cdf0b518a1c7a28892e1c1640e9ef065e37be0f0a358cd2e36972daeb68f",
+    "runs/smolvla_board_libero_v1/board_libero_10_0/rollout.mp4": "ca2950c237df6bc65e4804870579efe236333db54776d216cd2d385114f37b31"
+  }
+}

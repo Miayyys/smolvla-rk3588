@@ -1,0 +1,77 @@
+{
+  "scope": "full SmolVLA action-chunk sensitivity to MLP-output fake INT8",
+  "not_real_quantization": true,
+  "development_samples": 80,
+  "groups": {
+    "vision_6_only": {
+      "mean_full_chunk_mae_vs_fp": 0.001519109415676212,
+      "mean_first_action_mae_vs_recorded_delta": -4.427543026395142e-05,
+      "parameter_count": 4722432
+    },
+    "vision_7_only": {
+      "mean_full_chunk_mae_vs_fp": 0.0008343107510881964,
+      "mean_first_action_mae_vs_recorded_delta": -1.3526523252949118e-05,
+      "parameter_count": 4722432
+    },
+    "vision_8_only": {
+      "mean_full_chunk_mae_vs_fp": 0.0007468397529009962,
+      "mean_first_action_mae_vs_recorded_delta": -5.9657296515069905e-05,
+      "parameter_count": 4722432
+    },
+    "vision_9_only": {
+      "mean_full_chunk_mae_vs_fp": 0.0006449675965995993,
+      "mean_first_action_mae_vs_recorded_delta": 7.645730511285364e-06,
+      "parameter_count": 4722432
+    },
+    "vision_10_only": {
+      "mean_full_chunk_mae_vs_fp": 0.0006757052782631945,
+      "mean_first_action_mae_vs_recorded_delta": -7.27251754142344e-06,
+      "parameter_count": 4722432
+    },
+    "vision_11_only": {
+      "mean_full_chunk_mae_vs_fp": 0.02989958628313616,
+      "mean_first_action_mae_vs_recorded_delta": 0.014057711104396731,
+      "parameter_count": 4722432
+    },
+    "language_0_only": {
+      "mean_full_chunk_mae_vs_fp": 0.0031880158952844796,
+      "mean_first_action_mae_vs_recorded_delta": 0.0003665227850433439,
+      "parameter_count": 7372800
+    },
+    "language_1_only": {
+      "mean_full_chunk_mae_vs_fp": 0.0016866222187672975,
+      "mean_first_action_mae_vs_recorded_delta": -2.421816170681268e-05,
+      "parameter_count": 7372800
+    },
+    "language_2_only": {
+      "mean_full_chunk_mae_vs_fp": 0.0013368469313718378,
+      "mean_first_action_mae_vs_recorded_delta": -4.00314835133031e-05,
+      "parameter_count": 7372800
+    },
+    "language_3_only": {
+      "mean_full_chunk_mae_vs_fp": 0.0173067361683934,
+      "mean_first_action_mae_vs_recorded_delta": 0.00033990500960499046,
+      "parameter_count": 7372800
+    },
+    "language_4_only": {
+      "mean_full_chunk_mae_vs_fp": 0.0007675412540265825,
+      "mean_first_action_mae_vs_recorded_delta": 2.6814511511474847e-05,
+      "parameter_count": 7372800
+    },
+    "language_5_only": {
+      "mean_full_chunk_mae_vs_fp": 0.0007137306336517212,
+      "mean_first_action_mae_vs_recorded_delta": -7.799812010489404e-06,
+      "parameter_count": 7372800
+    },
+    "language_6_only": {
+      "mean_full_chunk_mae_vs_fp": 0.000827703098548227,
+      "mean_first_action_mae_vs_recorded_delta": 2.846863935701549e-05,
+      "parameter_count": 7372800
+    },
+    "language_7_only": {
+      "mean_full_chunk_mae_vs_fp": 0.0007234357613924658,
+      "mean_first_action_mae_vs_recorded_delta": 2.1974585251882672e-05,
+      "parameter_count": 7372800
+    }
+  }
+}

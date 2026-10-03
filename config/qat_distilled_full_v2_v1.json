@@ -1,0 +1,28 @@
+{
+  "scope": "distilled_FP_student_full_v2_map_QAT_local_pack_not_verified_RKNN",
+  "student_run": "runs/distillation_expert_first8_v1/kd_lr1e6",
+  "student_master_sha256": "4e93e82cfc662471810ce46e4ccef968c306c54ba1e759c6e50c4f4142cec88a",
+  "candidate": "config/haq_candidate_v2.json",
+  "output": "runs/qat_distilled_full_v2_v1",
+  "train_scope": "all_sites",
+  "steps": 1000,
+  "gradient_accumulation": 2,
+  "learning_rate": 1e-07,
+  "minimum_learning_rate": 1e-08,
+  "lr_schedule": "warmup_cosine",
+  "warmup_ratio": 0.05,
+  "teacher_weight": 0.2,
+  "teacher_task_fraction": 0.5,
+  "seed": 29,
+  "eval_every": 250,
+  "save_every": 250,
+  "keep_snapshots": 2,
+  "teacher_cache": "runs/teacher_actions_expanded_v3",
+  "teacher_review": "runs/teacher_actions_expanded_v3/review.json",
+  "closed_loop_panels": [
+    "long10",
+    "other9"
+  ],
+  "RKNN_full_policy_verified": false,
+  "independent_original_FP_PTQ_required_afterward": true
+}

@@ -1,0 +1,15 @@
+{
+  "lerobot_release": "v0.6.1",
+  "model_repo": "lerobot/smolvla_libero",
+  "model_revision": "31d453f7edd78c839a8bbc39744a292686daf0de",
+  "model_safetensors_sha256": "9a9f6413e42c0f332fccbce9a0dc796af2790f82cf002f791cdbf7e01e1afca8",
+  "vlm_assets_repo": "HuggingFaceTB/SmolVLM2-500M-Video-Instruct",
+  "vlm_assets_revision": "7b375e1b73b11138ff12fe22c8f2822d8fe03467",
+  "dataset_repo": "lerobot/libero",
+  "dataset_revision": "a1aaacb7f6cd6ee5fb43120f673cebb0cfea7dd4",
+  "libero_assets_repo": "lerobot/libero-assets",
+  "libero_assets_revision": "0b3ea86be5fe169d0fd036ae63d1070ec09e90f6",
+  "smoke_episode_index": 0,
+  "smoke_frame_index": 0,
+  "smoke_seed": 0
+}

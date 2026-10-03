@@ -1,0 +1,110 @@
+[
+  {
+    "module": "vision10",
+    "source_runtime_dtype": "torch.float32",
+    "direct_bf16_mae": 0.001070702710421756,
+    "direct_fp16_mae": 0.00012804229845642112,
+    "loaded_mae": 0.0,
+    "rknn": {
+      "bf16": {
+        "mean_mae": 0.0010276448883814737,
+        "rknn_bytes": 9890823,
+        "parity_source": "runs/rknn_vision10_bf16_probe/parity.json",
+        "compile_source": "runs/rknn_vision10_bf16_probe/bf16_compile_report.json"
+      },
+      "fp16": {
+        "mean_mae": 0.00015129796884139068,
+        "rknn_bytes": 9938567,
+        "parity_source": "runs/rknn_vision10_fp16_probe/parity.json",
+        "compile_source": "runs/rknn_vision10_fp16_probe/fp16_compile_report.json"
+      },
+      "int8": {
+        "mean_mae": 0.013935733819380403,
+        "rknn_bytes": 5293473,
+        "parity_source": "runs/rknn_vision10_int8_probe/parity.json",
+        "compile_source": "runs/rknn_vision10_int8_probe/int8_mmse_compile_report.json"
+      }
+    }
+  },
+  {
+    "module": "vision11",
+    "source_runtime_dtype": "torch.float32",
+    "direct_bf16_mae": 0.004114823532290757,
+    "direct_fp16_mae": 0.000482750081573613,
+    "loaded_mae": 0.0,
+    "rknn": {
+      "bf16": {
+        "mean_mae": 0.003849486936815083,
+        "rknn_bytes": 9890823,
+        "parity_source": "runs/rknn_vision11_bf16_probe/parity.json",
+        "compile_source": "runs/rknn_vision11_bf16_probe/bf16_compile_report.json"
+      },
+      "fp16": {
+        "mean_mae": 0.0005014653725083917,
+        "rknn_bytes": 9938567,
+        "parity_source": "runs/rknn_vision11_fp16_probe/parity.json",
+        "compile_source": "runs/rknn_vision11_fp16_probe/fp16_compile_report.json"
+      },
+      "int8": {
+        "mean_mae": 0.48282095789909363,
+        "rknn_bytes": 5293473,
+        "parity_source": "runs/rknn_vision11_int8_probe/parity.json",
+        "compile_source": "runs/rknn_vision11_int8_probe/int8_mmse_compile_report.json"
+      }
+    }
+  },
+  {
+    "module": "language3",
+    "source_runtime_dtype": "torch.bfloat16",
+    "direct_bf16_mae": 0.0038624521694146097,
+    "direct_fp16_mae": 0.00047862675273790956,
+    "loaded_mae": 0.0038624521694146097,
+    "rknn": {
+      "bf16": {
+        "mean_mae": 0.0038615193916484714,
+        "rknn_bytes": 14852165,
+        "parity_source": "runs/rknn_language3_bf16_probe/parity.json",
+        "compile_source": "runs/rknn_language3_bf16_probe/bf16_compile_report.json"
+      },
+      "fp16": {
+        "mean_mae": 0.0004784273114637472,
+        "rknn_bytes": 14857285,
+        "parity_source": "runs/rknn_language3_fp16_probe/parity.json",
+        "compile_source": "runs/rknn_language3_fp16_probe/fp16_compile_report.json"
+      },
+      "int8": {
+        "mean_mae": 0.8126401603221893,
+        "rknn_bytes": 7522271,
+        "parity_source": "runs/rknn_language3_int8_probe/parity.json",
+        "compile_source": "runs/rknn_language3_int8_probe/int8_mmse_compile_report.json"
+      }
+    }
+  },
+  {
+    "module": "language4",
+    "source_runtime_dtype": "torch.bfloat16",
+    "direct_bf16_mae": 0.003604998521041125,
+    "direct_fp16_mae": 0.0004462176439119503,
+    "loaded_mae": 0.003604998521041125,
+    "rknn": {
+      "bf16": {
+        "mean_mae": 0.003604788624215871,
+        "rknn_bytes": 14852165,
+        "parity_source": "runs/rknn_language4_bf16_probe/parity.json",
+        "compile_source": "runs/rknn_language4_bf16_probe/bf16_compile_report.json"
+      },
+      "fp16": {
+        "mean_mae": 0.00044507006532512605,
+        "rknn_bytes": 14857285,
+        "parity_source": "runs/rknn_language4_fp16_probe/parity.json",
+        "compile_source": "runs/rknn_language4_fp16_probe/fp16_compile_report.json"
+      },
+      "int8": {
+        "mean_mae": 0.06608335301280022,
+        "rknn_bytes": 7522271,
+        "parity_source": "runs/rknn_language4_int8_probe/parity.json",
+        "compile_source": "runs/rknn_language4_int8_probe/int8_mmse_compile_report.json"
+      }
+    }
+  }
+]

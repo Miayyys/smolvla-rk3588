@@ -1,0 +1,66 @@
+[
+  {
+    "module": "vision10",
+    "original_loaded_dtype": "torch.float32",
+    "modes": {
+      "bf16": {
+        "mean_mae_vs_original_loaded": 0.0010276446409989148,
+        "source": "runs/rknn_vision10_bf16_probe/parity_vs_loaded.json",
+        "samples": 4
+      },
+      "fp16": {
+        "mean_mae_vs_original_loaded": 0.00015129676467040554,
+        "source": "runs/rknn_vision10_fp16_probe/parity_vs_loaded.json",
+        "samples": 4
+      }
+    }
+  },
+  {
+    "module": "vision11",
+    "original_loaded_dtype": "torch.float32",
+    "modes": {
+      "bf16": {
+        "mean_mae_vs_original_loaded": 0.0038494860637001693,
+        "source": "runs/rknn_vision11_bf16_probe/parity_vs_loaded.json",
+        "samples": 4
+      },
+      "fp16": {
+        "mean_mae_vs_original_loaded": 0.0005014663911424577,
+        "source": "runs/rknn_vision11_fp16_probe/parity_vs_loaded.json",
+        "samples": 4
+      }
+    }
+  },
+  {
+    "module": "language3",
+    "original_loaded_dtype": "torch.bfloat16",
+    "modes": {
+      "bf16": {
+        "mean_mae_vs_original_loaded": 3.984867771578138e-05,
+        "source": "runs/rknn_language3_bf16_probe/parity_vs_loaded.json",
+        "samples": 4
+      },
+      "fp16": {
+        "mean_mae_vs_original_loaded": 0.0039030115585774183,
+        "source": "runs/rknn_language3_fp16_probe/parity_vs_loaded.json",
+        "samples": 4
+      }
+    }
+  },
+  {
+    "module": "language4",
+    "original_loaded_dtype": "torch.bfloat16",
+    "modes": {
+      "bf16": {
+        "mean_mae_vs_original_loaded": 4.2044509427796584e-05,
+        "source": "runs/rknn_language4_bf16_probe/parity_vs_loaded.json",
+        "samples": 4
+      },
+      "fp16": {
+        "mean_mae_vs_original_loaded": 0.0036392362671904266,
+        "source": "runs/rknn_language4_fp16_probe/parity_vs_loaded.json",
+        "samples": 4
+      }
+    }
+  }
+]

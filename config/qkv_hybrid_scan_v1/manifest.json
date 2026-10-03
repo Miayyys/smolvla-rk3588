@@ -1,0 +1,53 @@
+[
+  {
+    "candidate": "q",
+    "fp16_outputs": [
+      "/q_proj/MatMul_output_0_mm"
+    ],
+    "config": "config/qkv_hybrid_scan_v1/rknn_expert_qkv0_mmse_q_fp16.cfg",
+    "sha256": "e85f1289eac3d4fec422fc8c7a67aaf3f8703e1f57bebaf5308682101b33658a"
+  },
+  {
+    "candidate": "k",
+    "fp16_outputs": [
+      "/k_proj/MatMul_output_0_mm"
+    ],
+    "config": "config/qkv_hybrid_scan_v1/rknn_expert_qkv0_mmse_k_fp16.cfg",
+    "sha256": "85aad2ded3ff3818e3654c53b9c40230efc566d06729a036fa92bfa527e0b144"
+  },
+  {
+    "candidate": "v",
+    "fp16_outputs": [
+      "/v_proj/MatMul_output_0_mm"
+    ],
+    "config": "config/qkv_hybrid_scan_v1/rknn_expert_qkv0_mmse_v_fp16.cfg",
+    "sha256": "1e26ba3f08086e94f44d4e07b7376b512a8f0a5262fb404f5f60ce703b7422ce"
+  },
+  {
+    "candidate": "qk",
+    "fp16_outputs": [
+      "/q_proj/MatMul_output_0_mm",
+      "/k_proj/MatMul_output_0_mm"
+    ],
+    "config": "config/qkv_hybrid_scan_v1/rknn_expert_qkv0_mmse_qk_fp16.cfg",
+    "sha256": "8d064d877ec99644c47e5035407df4c4a46c79a54a7dddc2ec5119b1bc3c9f8c"
+  },
+  {
+    "candidate": "qv",
+    "fp16_outputs": [
+      "/q_proj/MatMul_output_0_mm",
+      "/v_proj/MatMul_output_0_mm"
+    ],
+    "config": "config/qkv_hybrid_scan_v1/rknn_expert_qkv0_mmse_qv_fp16.cfg",
+    "sha256": "352a78abd3f989d274e4e9076baeab9a5d0e75c26b0f1fabbfc68ba8ffba5e21"
+  },
+  {
+    "candidate": "kv",
+    "fp16_outputs": [
+      "/k_proj/MatMul_output_0_mm",
+      "/v_proj/MatMul_output_0_mm"
+    ],
+    "config": "config/qkv_hybrid_scan_v1/rknn_expert_qkv0_mmse_kv_fp16.cfg",
+    "sha256": "3a1dc6f4fca4879f2cdcc6aebc118b500ad4ec0fb5c51cecafd4e54309e747ad"
+  }
+]

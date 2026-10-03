@@ -1,0 +1,47 @@
+{
+  "status": "background_pipeline_started_preparing_real_teacher_observations",
+  "teacher_tasks": "libero_10_only",
+  "teacher_samples_per_task": 500,
+  "sampling": "unique_frames_balanced_episodes_and_temporal_thirds",
+  "teacher_inputs": "runs/teacher_inputs_expanded_v3",
+  "teacher_cache": "runs/teacher_actions_expanded_v3",
+  "teacher_review": "runs/teacher_actions_expanded_v3/review.json",
+  "student_candidate": "config/haq_candidate_v2.json",
+  "fp_distillation": {
+    "steps": 2000,
+    "gradient_accumulation": 2,
+    "learning_rate": 1e-06,
+    "minimum_learning_rate": 1e-07,
+    "lr_schedule": "warmup_cosine",
+    "warmup_ratio": 0.05,
+    "teacher_task_fraction": 0.5,
+    "teacher_weight": 0.2,
+    "eval_every": 250,
+    "save_every": 250,
+    "keep_snapshots": 2
+  },
+  "qat": {
+    "status": "await_FP_distillation_quality_and_user_notification",
+    "initial_master": "must_be_verified_FP_distillation_checkpoint",
+    "quantization_map": "frozen_v2",
+    "teacher_loss": "masked_reviewed_labels_plus_GT",
+    "RKNN_full_mixed_policy_parity_verified": false,
+    "formal_hardware_aware_QAT_ready": false,
+    "proposed_local_recipe": {
+      "steps": 1000,
+      "gradient_accumulation": 2,
+      "learning_rate": 1e-07,
+      "minimum_learning_rate": 1e-08,
+      "lr_schedule": "warmup_cosine",
+      "warmup_ratio": 0.05,
+      "teacher_task_fraction": 0.5,
+      "teacher_weight": 0.2,
+      "eval_every": 250,
+      "save_every": 250,
+      "keep_snapshots": 2
+    }
+  },
+  "quality_target": "paired_long10_at_least8of10_with_other_suites_regression_check",
+  "offline_MAE_is_final_selection_criterion": false,
+  "teacher_contract_filter_proves_semantic_correctness": false
+}

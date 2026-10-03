@@ -1,0 +1,293 @@
+{
+  "scope": "16 expert MLP W8A8 RKNN host numeric vs original FP32 ONNX",
+  "records": [
+    {
+      "layer": 0,
+      "mode": "ptq",
+      "status": "success",
+      "returncode": 0,
+      "mean_mae": 0.009419486617359023,
+      "mean_master_mae": 0.0,
+      "rknn_bytes": 4524893
+    },
+    {
+      "layer": 0,
+      "mode": "qat",
+      "status": "success",
+      "returncode": 0,
+      "mean_mae": 0.009237838008751472,
+      "mean_master_mae": 0.00013177329043780143,
+      "rknn_bytes": 4524893
+    },
+    {
+      "layer": 1,
+      "mode": "ptq",
+      "status": "success",
+      "returncode": 0,
+      "mean_mae": 0.005976241363290076,
+      "mean_master_mae": 0.0,
+      "rknn_bytes": 4524893
+    },
+    {
+      "layer": 1,
+      "mode": "qat",
+      "status": "success",
+      "returncode": 0,
+      "mean_mae": 0.005952268173374856,
+      "mean_master_mae": 0.0001006193221352684,
+      "rknn_bytes": 4524893
+    },
+    {
+      "layer": 2,
+      "mode": "ptq",
+      "status": "success",
+      "returncode": 0,
+      "mean_mae": 0.005017808832538624,
+      "mean_master_mae": 0.0,
+      "rknn_bytes": 4524893
+    },
+    {
+      "layer": 2,
+      "mode": "qat",
+      "status": "success",
+      "returncode": 0,
+      "mean_mae": 0.005108605591037,
+      "mean_master_mae": 8.564528316128417e-05,
+      "rknn_bytes": 4524893
+    },
+    {
+      "layer": 3,
+      "mode": "ptq",
+      "status": "success",
+      "returncode": 0,
+      "mean_mae": 0.00467106411815621,
+      "mean_master_mae": 0.0,
+      "rknn_bytes": 4524893
+    },
+    {
+      "layer": 3,
+      "mode": "qat",
+      "status": "success",
+      "returncode": 0,
+      "mean_mae": 0.004671370057621971,
+      "mean_master_mae": 7.880304250041566e-05,
+      "rknn_bytes": 4524893
+    },
+    {
+      "layer": 4,
+      "mode": "ptq",
+      "status": "success",
+      "returncode": 0,
+      "mean_mae": 0.004643071512691677,
+      "mean_master_mae": 0.0,
+      "rknn_bytes": 4524893
+    },
+    {
+      "layer": 4,
+      "mode": "qat",
+      "status": "success",
+      "returncode": 0,
+      "mean_mae": 0.004636534736103689,
+      "mean_master_mae": 6.909508592798375e-05,
+      "rknn_bytes": 4524893
+    },
+    {
+      "layer": 5,
+      "mode": "ptq",
+      "status": "success",
+      "returncode": 0,
+      "mean_mae": 0.005513152926384161,
+      "mean_master_mae": 0.0,
+      "rknn_bytes": 4524893
+    },
+    {
+      "layer": 5,
+      "mode": "qat",
+      "status": "success",
+      "returncode": 0,
+      "mean_mae": 0.0051971247458520034,
+      "mean_master_mae": 7.376448643299227e-05,
+      "rknn_bytes": 4524893
+    },
+    {
+      "layer": 6,
+      "mode": "ptq",
+      "status": "success",
+      "returncode": 0,
+      "mean_mae": 0.005425552092492581,
+      "mean_master_mae": 0.0,
+      "rknn_bytes": 4524893
+    },
+    {
+      "layer": 6,
+      "mode": "qat",
+      "status": "success",
+      "returncode": 0,
+      "mean_mae": 0.005336081665397311,
+      "mean_master_mae": 6.929290122267654e-05,
+      "rknn_bytes": 4524893
+    },
+    {
+      "layer": 7,
+      "mode": "ptq",
+      "status": "success",
+      "returncode": 0,
+      "mean_mae": 0.00605419113029105,
+      "mean_master_mae": 0.0,
+      "rknn_bytes": 4524893
+    },
+    {
+      "layer": 7,
+      "mode": "qat",
+      "status": "success",
+      "returncode": 0,
+      "mean_mae": 0.005838333431165665,
+      "mean_master_mae": 7.27164518139034e-05,
+      "rknn_bytes": 4524893
+    },
+    {
+      "layer": 8,
+      "mode": "ptq",
+      "status": "success",
+      "returncode": 0,
+      "mean_mae": 0.005794441179993252,
+      "mean_master_mae": 0.0,
+      "rknn_bytes": 4524893
+    },
+    {
+      "layer": 8,
+      "mode": "qat",
+      "status": "success",
+      "returncode": 0,
+      "mean_mae": 0.005713117060561975,
+      "mean_master_mae": 7.265841256109222e-05,
+      "rknn_bytes": 4524893
+    },
+    {
+      "layer": 9,
+      "mode": "ptq",
+      "status": "success",
+      "returncode": 0,
+      "mean_mae": 0.006494416393494854,
+      "mean_master_mae": 0.0,
+      "rknn_bytes": 4524893
+    },
+    {
+      "layer": 9,
+      "mode": "qat",
+      "status": "success",
+      "returncode": 0,
+      "mean_mae": 0.00651717001455836,
+      "mean_master_mae": 8.5949040142926e-05,
+      "rknn_bytes": 4524893
+    },
+    {
+      "layer": 10,
+      "mode": "ptq",
+      "status": "success",
+      "returncode": 0,
+      "mean_mae": 0.007818377704825252,
+      "mean_master_mae": 0.0,
+      "rknn_bytes": 4524893
+    },
+    {
+      "layer": 10,
+      "mode": "qat",
+      "status": "success",
+      "returncode": 0,
+      "mean_mae": 0.007804935796108718,
+      "mean_master_mae": 9.003796070222355e-05,
+      "rknn_bytes": 4524893
+    },
+    {
+      "layer": 11,
+      "mode": "ptq",
+      "status": "success",
+      "returncode": 0,
+      "mean_mae": 0.007589530700352043,
+      "mean_master_mae": 0.0,
+      "rknn_bytes": 4524893
+    },
+    {
+      "layer": 11,
+      "mode": "qat",
+      "status": "success",
+      "returncode": 0,
+      "mean_mae": 0.007315034780185669,
+      "mean_master_mae": 8.272215216796516e-05,
+      "rknn_bytes": 4524893
+    },
+    {
+      "layer": 12,
+      "mode": "ptq",
+      "status": "success",
+      "returncode": 0,
+      "mean_mae": 0.007212601776700467,
+      "mean_master_mae": 0.0,
+      "rknn_bytes": 4524893
+    },
+    {
+      "layer": 12,
+      "mode": "qat",
+      "status": "success",
+      "returncode": 0,
+      "mean_mae": 0.007213358563603833,
+      "mean_master_mae": 7.377773634592207e-05,
+      "rknn_bytes": 4524893
+    },
+    {
+      "layer": 13,
+      "mode": "ptq",
+      "status": "success",
+      "returncode": 0,
+      "mean_mae": 0.007894993391043196,
+      "mean_master_mae": 0.0,
+      "rknn_bytes": 4524893
+    },
+    {
+      "layer": 13,
+      "mode": "qat",
+      "status": "success",
+      "returncode": 0,
+      "mean_mae": 0.008163994568167254,
+      "mean_master_mae": 7.684182758869914e-05,
+      "rknn_bytes": 4524893
+    },
+    {
+      "layer": 14,
+      "mode": "ptq",
+      "status": "success",
+      "returncode": 0,
+      "mean_mae": 0.006782116622586424,
+      "mean_master_mae": 0.0,
+      "rknn_bytes": 4524893
+    },
+    {
+      "layer": 14,
+      "mode": "qat",
+      "status": "success",
+      "returncode": 0,
+      "mean_mae": 0.006767028079290564,
+      "mean_master_mae": 6.149321151648716e-05,
+      "rknn_bytes": 4524893
+    },
+    {
+      "layer": 15,
+      "mode": "ptq",
+      "status": "success",
+      "returncode": 0,
+      "mean_mae": 0.010703084738148997,
+      "mean_master_mae": 0.0,
+      "rknn_bytes": 4524893
+    },
+    {
+      "layer": 15,
+      "mode": "qat",
+      "status": "success",
+      "returncode": 0,
+      "mean_mae": 0.010705174610484392,
+      "mean_master_mae": 7.770655594564838e-05,
+      "rknn_bytes": 4524893
+    }
+  ]
+}

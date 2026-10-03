@@ -1,0 +1,55 @@
+{
+  "scope": "full SmolVLA action-chunk sensitivity to module-output fake INT8",
+  "not_real_quantization": true,
+  "development_samples": 80,
+  "groups": {
+    "vision_patch_projection": {
+      "label": "Vision patch projection",
+      "mean_full_chunk_mae_vs_fp": 0.0020976348936528667,
+      "mean_first_action_mae_vs_recorded_delta": -0.0001854646223364398,
+      "module_parameter_count": 590592
+    },
+    "vision_attention_0_5": {
+      "label": "Vision attention 0\u20135",
+      "mean_full_chunk_mae_vs_fp": 0.0013036124866630417,
+      "mean_first_action_mae_vs_recorded_delta": -3.07583250105381e-06,
+      "module_parameter_count": 14174208
+    },
+    "vision_attention_6_11": {
+      "label": "Vision attention 6\u201311",
+      "mean_full_chunk_mae_vs_fp": 0.00101043096583453,
+      "mean_first_action_mae_vs_recorded_delta": -3.6625558277592066e-05,
+      "module_parameter_count": 14174208
+    },
+    "language_attention_0_7": {
+      "label": "Language attention 0\u20137",
+      "mean_full_chunk_mae_vs_fp": 0.0017168143622257048,
+      "mean_first_action_mae_vs_recorded_delta": 0.00026469582808203996,
+      "module_parameter_count": 19660800
+    },
+    "language_attention_8_15": {
+      "label": "Language attention 8\u201315",
+      "mean_full_chunk_mae_vs_fp": 0.0010850400263734627,
+      "mean_first_action_mae_vs_recorded_delta": -5.74083038372919e-05,
+      "module_parameter_count": 19660800
+    },
+    "expert_attention_0_7": {
+      "label": "Expert attention 0\u20137",
+      "mean_full_chunk_mae_vs_fp": 0.0006247169239941286,
+      "mean_first_action_mae_vs_recorded_delta": -1.4228501822799444e-05,
+      "module_parameter_count": 13721600
+    },
+    "expert_attention_8_15": {
+      "label": "Expert attention 8\u201315",
+      "mean_full_chunk_mae_vs_fp": 0.0006589131724467733,
+      "mean_first_action_mae_vs_recorded_delta": -2.3180112475529312e-05,
+      "module_parameter_count": 13721600
+    },
+    "action_interface_projections": {
+      "label": "State/action projections",
+      "mean_full_chunk_mae_vs_fp": 0.0013451961611281149,
+      "mean_first_action_mae_vs_recorded_delta": 0.0001405332441208884,
+      "module_parameter_count": 78512
+    }
+  }
+}

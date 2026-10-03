@@ -1,0 +1,32 @@
+[
+  {
+    "label": "Expert only",
+    "group": "mixed_stage1_expert_outputs",
+    "source_weight_bytes": 199720960,
+    "module_count": 80,
+    "samples": 40,
+    "mean_action_mae_vs_fp": 0.001097451256646309,
+    "p95_row_action_mae_vs_fp": 0.001360742392716929,
+    "max_row_action_mae_vs_fp": 0.001692931866273284
+  },
+  {
+    "label": "+ late VLM",
+    "group": "mixed_stage2_late_vlm_outputs",
+    "source_weight_bytes": 432580096,
+    "module_count": 149,
+    "samples": 40,
+    "mean_action_mae_vs_fp": 0.004943720734445378,
+    "p95_row_action_mae_vs_fp": 0.006915851915255188,
+    "max_row_action_mae_vs_fp": 0.007533944211900234
+  },
+  {
+    "label": "All v0 candidates",
+    "group": "mixed_v0_active_outputs",
+    "source_weight_bytes": 660138496,
+    "module_count": 218,
+    "samples": 40,
+    "mean_action_mae_vs_fp": 0.01885074991732836,
+    "p95_row_action_mae_vs_fp": 0.03227115571498869,
+    "max_row_action_mae_vs_fp": 0.042992182075977325
+  }
+]

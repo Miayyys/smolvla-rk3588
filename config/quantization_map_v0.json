@@ -1,0 +1,40 @@
+{
+  "version": "candidate-v0-2026-09-27",
+  "checkpoint_revision": "31d453f7edd78c839a8bbc39744a292686daf0de",
+  "checkpoint_weight_sha256": "9a9f6413e42c0f332fccbce9a0dc796af2790f82cf002f791cdbf7e01e1afca8",
+  "evaluation_partition_sha256": "f755546a6b074d2fe248333fc42c3dbf30f9b54b9f0fa0b58a16506a54d942c2",
+  "status": "candidate_only_no_full_model_or_board_validation",
+  "format_semantics": {
+    "native": "Preserve original loaded runtime dtype and behavior; identify exact dtype before export.",
+    "fp16": "Preserve as floating point using FP16 when the particular subgraph is verified.",
+    "bf16": "Preserve as floating point using BF16 when the particular subgraph is verified.",
+    "w8a8": "Candidate RKNN weight INT8 and activation INT8; calibration, compilation and board validation required."
+  },
+  "groups": [
+    {"id":"vision_patch","pattern":"^model\\.vlm_with_expert\\.vlm\\.model\\.vision_model\\.embeddings\\.patch_embedding\\.","v0_format":"native","next_probe":"w8a8","reason":"action_output_tail"},
+    {"id":"vision_position","pattern":"^model\\.vlm_with_expert\\.vlm\\.model\\.vision_model\\.embeddings\\.position_embedding\\.","v0_format":"native","next_probe":"keep_float","reason":"embedding_not_probed"},
+    {"id":"vision_attention_0_5","pattern":"^model\\.vlm_with_expert\\.vlm\\.model\\.vision_model\\.encoder\\.layers\\.[0-5]\\.self_attn\\.","v0_format":"w8a8","next_probe":"real_full_action","reason":"output_rounding_probe_only"},
+    {"id":"vision_attention_6_11","pattern":"^model\\.vlm_with_expert\\.vlm\\.model\\.vision_model\\.encoder\\.layers\\.(?:[6-9]|1[01])\\.self_attn\\.","v0_format":"w8a8","next_probe":"real_full_action","reason":"output_rounding_probe_only"},
+    {"id":"vision_mlp_0_5","pattern":"^model\\.vlm_with_expert\\.vlm\\.model\\.vision_model\\.encoder\\.layers\\.[0-5]\\.mlp\\.","v0_format":"w8a8","next_probe":"real_full_action","reason":"group_probe_only"},
+    {"id":"vision_mlp_6_10","pattern":"^model\\.vlm_with_expert\\.vlm\\.model\\.vision_model\\.encoder\\.layers\\.(?:[6-9]|10)\\.mlp\\.","v0_format":"w8a8","next_probe":"real_full_action","reason":"low_relative_output_rounding_sensitivity"},
+    {"id":"vision_mlp_11","pattern":"^model\\.vlm_with_expert\\.vlm\\.model\\.vision_model\\.encoder\\.layers\\.11\\.mlp\\.","v0_format":"fp16","next_probe":"compare_real_w8a8_with_float","reason":"high_action_and_rknn_int8_error"},
+    {"id":"vision_norm","pattern":"^model\\.vlm_with_expert\\.vlm\\.model\\.vision_model\\.(?:encoder\\.layers\\.\\d+\\.layer_norm[12]\\.|post_layernorm\\.)","v0_format":"native","next_probe":"float_export","reason":"norm_float_boundary"},
+    {"id":"connector","pattern":"^model\\.vlm_with_expert\\.vlm\\.model\\.connector\\.","v0_format":"native","next_probe":"w8a8_and_interface_test","reason":"large_unprobed_projection"},
+    {"id":"language_embedding","pattern":"^model\\.vlm_with_expert\\.vlm\\.model\\.text_model\\.embed_tokens\\.","v0_format":"native","next_probe":"liveness_and_weight_only_test","reason":"large_unprobed_embedding"},
+    {"id":"language_attention_0_7","pattern":"^model\\.vlm_with_expert\\.vlm\\.model\\.text_model\\.layers\\.[0-7]\\.self_attn\\.","v0_format":"w8a8","next_probe":"real_full_action_tail","reason":"output_rounding_tail"},
+    {"id":"language_attention_8_15","pattern":"^model\\.vlm_with_expert\\.vlm\\.model\\.text_model\\.layers\\.(?:[89]|1[0-5])\\.self_attn\\.","v0_format":"w8a8","next_probe":"real_full_action","reason":"output_rounding_probe_only"},
+    {"id":"language_mlp_0_2","pattern":"^model\\.vlm_with_expert\\.vlm\\.model\\.text_model\\.layers\\.[0-2]\\.mlp\\.","v0_format":"w8a8","next_probe":"real_full_action_tail","reason":"early_language_mlp_probe"},
+    {"id":"language_mlp_3","pattern":"^model\\.vlm_with_expert\\.vlm\\.model\\.text_model\\.layers\\.3\\.mlp\\.","v0_format":"bf16","next_probe":"compare_real_w8a8_with_float","reason":"high_action_and_rknn_int8_error"},
+    {"id":"language_mlp_4_7","pattern":"^model\\.vlm_with_expert\\.vlm\\.model\\.text_model\\.layers\\.[4-7]\\.mlp\\.","v0_format":"w8a8","next_probe":"real_full_action","reason":"low_relative_output_rounding_sensitivity"},
+    {"id":"language_mlp_8_15","pattern":"^model\\.vlm_with_expert\\.vlm\\.model\\.text_model\\.layers\\.(?:[89]|1[0-5])\\.mlp\\.","v0_format":"w8a8","next_probe":"real_full_action","reason":"group_probe_only"},
+    {"id":"language_norm","pattern":"^model\\.vlm_with_expert\\.vlm\\.model\\.text_model\\.(?:layers\\.\\d+\\.(?:input_layernorm|post_attention_layernorm)\\.|norm\\.)","v0_format":"native","next_probe":"float_export","reason":"norm_float_boundary"},
+    {"id":"lm_head","pattern":"^model\\.vlm_with_expert\\.vlm\\.lm_head\\.","v0_format":"native","next_probe":"prove_action_path_liveness_and_tied_weights","reason":"large_weight_activity_unknown"},
+    {"id":"expert_attention_0_7","pattern":"^model\\.vlm_with_expert\\.lm_expert\\.layers\\.[0-7]\\.self_attn\\.","v0_format":"w8a8","next_probe":"real_full_action","reason":"low_output_rounding_sensitivity"},
+    {"id":"expert_attention_8_15","pattern":"^model\\.vlm_with_expert\\.lm_expert\\.layers\\.(?:[89]|1[0-5])\\.self_attn\\.","v0_format":"w8a8","next_probe":"real_full_action","reason":"low_output_rounding_sensitivity"},
+    {"id":"expert_mlp_0_7","pattern":"^model\\.vlm_with_expert\\.lm_expert\\.layers\\.[0-7]\\.mlp\\.","v0_format":"w8a8","next_probe":"real_full_action","reason":"group_probe_only"},
+    {"id":"expert_mlp_8_15","pattern":"^model\\.vlm_with_expert\\.lm_expert\\.layers\\.(?:[89]|1[0-5])\\.mlp\\.","v0_format":"w8a8","next_probe":"real_full_action","reason":"group_probe_only"},
+    {"id":"expert_norm","pattern":"^model\\.vlm_with_expert\\.lm_expert\\.(?:layers\\.\\d+\\.(?:input_layernorm|post_attention_layernorm)\\.|norm\\.)","v0_format":"native","next_probe":"float_export","reason":"norm_float_boundary"},
+    {"id":"action_time_mlp","pattern":"^model\\.action_time_mlp_(?:in|out)\\.","v0_format":"native","next_probe":"real_w8a8_sensitivity","reason":"unprobed_time_path"},
+    {"id":"action_interface","pattern":"^model\\.(?:state_proj|action_in_proj|action_out_proj)\\.","v0_format":"native","next_probe":"keep_float_then_test","reason":"small_and_action_sensitive"}
+  ]
+}
