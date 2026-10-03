@@ -1,0 +1,835 @@
+{
+  "scope": "40 raw development observations compared with original GPU processor; no network/closed-loop evaluation",
+  "checkpoint_sha256": "9a9f6413e42c0f332fccbce9a0dc796af2790f82cf002f791cdbf7e01e1afca8",
+  "sample": {
+    "episode_index": 18,
+    "task_index": 0,
+    "frame_index": 0,
+    "action_seed": 2416662958
+  },
+  "tokenizers_version": "0.22.2",
+  "rows": [
+    {
+      "sample": {
+        "episode_index": 18,
+        "task_index": 0,
+        "frame_index": 0,
+        "action_seed": 2416662958
+      },
+      "image_error": {
+        "mae": 4.293838173907716e-09,
+        "rmse": 1.8132846441965786e-08,
+        "max_abs_error": 2.384185791015625e-07
+      },
+      "state_error": {
+        "mae": 0.0,
+        "rmse": 0.0,
+        "max_abs_error": 0.0
+      },
+      "token_ids_exact": true,
+      "token_mask_exact": true
+    },
+    {
+      "sample": {
+        "episode_index": 1,
+        "task_index": 1,
+        "frame_index": 141,
+        "action_seed": 3094218881
+      },
+      "image_error": {
+        "mae": 7.22021316808726e-09,
+        "rmse": 2.4654179852413666e-08,
+        "max_abs_error": 2.384185791015625e-07
+      },
+      "state_error": {
+        "mae": 0.0,
+        "rmse": 0.0,
+        "max_abs_error": 0.0
+      },
+      "token_ids_exact": true,
+      "token_mask_exact": true
+    },
+    {
+      "sample": {
+        "episode_index": 3,
+        "task_index": 2,
+        "frame_index": 255,
+        "action_seed": 2213393755
+      },
+      "image_error": {
+        "mae": 9.718595113857495e-09,
+        "rmse": 3.392899207073901e-08,
+        "max_abs_error": 2.384185791015625e-07
+      },
+      "state_error": {
+        "mae": 0.0,
+        "rmse": 0.0,
+        "max_abs_error": 0.0
+      },
+      "token_ids_exact": true,
+      "token_mask_exact": true
+    },
+    {
+      "sample": {
+        "episode_index": 6,
+        "task_index": 3,
+        "frame_index": 0,
+        "action_seed": 1198690170
+      },
+      "image_error": {
+        "mae": 1.0026231696732188e-08,
+        "rmse": 3.381629655415199e-08,
+        "max_abs_error": 2.384185791015625e-07
+      },
+      "state_error": {
+        "mae": 0.0,
+        "rmse": 0.0,
+        "max_abs_error": 0.0
+      },
+      "token_ids_exact": true,
+      "token_mask_exact": true
+    },
+    {
+      "sample": {
+        "episode_index": 7,
+        "task_index": 4,
+        "frame_index": 135,
+        "action_seed": 1399630350
+      },
+      "image_error": {
+        "mae": 6.774181808092787e-09,
+        "rmse": 2.4108420486827685e-08,
+        "max_abs_error": 2.384185791015625e-07
+      },
+      "state_error": {
+        "mae": 0.0,
+        "rmse": 0.0,
+        "max_abs_error": 0.0
+      },
+      "token_ids_exact": true,
+      "token_mask_exact": true
+    },
+    {
+      "sample": {
+        "episode_index": 8,
+        "task_index": 5,
+        "frame_index": 232,
+        "action_seed": 2219031877
+      },
+      "image_error": {
+        "mae": 6.66674774644586e-09,
+        "rmse": 2.2856768184287218e-08,
+        "max_abs_error": 2.384185791015625e-07
+      },
+      "state_error": {
+        "mae": 0.0,
+        "rmse": 0.0,
+        "max_abs_error": 0.0
+      },
+      "token_ids_exact": true,
+      "token_mask_exact": true
+    },
+    {
+      "sample": {
+        "episode_index": 10,
+        "task_index": 6,
+        "frame_index": 0,
+        "action_seed": 2357482683
+      },
+      "image_error": {
+        "mae": 1.0000993218757989e-08,
+        "rmse": 3.402372632936321e-08,
+        "max_abs_error": 2.384185791015625e-07
+      },
+      "state_error": {
+        "mae": 0.0,
+        "rmse": 0.0,
+        "max_abs_error": 0.0
+      },
+      "token_ids_exact": true,
+      "token_mask_exact": true
+    },
+    {
+      "sample": {
+        "episode_index": 12,
+        "task_index": 7,
+        "frame_index": 139,
+        "action_seed": 2540521659
+      },
+      "image_error": {
+        "mae": 6.962598793810078e-09,
+        "rmse": 2.4224226140067904e-08,
+        "max_abs_error": 2.384185791015625e-07
+      },
+      "state_error": {
+        "mae": 0.0,
+        "rmse": 0.0,
+        "max_abs_error": 0.0
+      },
+      "token_ids_exact": true,
+      "token_mask_exact": true
+    },
+    {
+      "sample": {
+        "episode_index": 14,
+        "task_index": 8,
+        "frame_index": 230,
+        "action_seed": 1525017598
+      },
+      "image_error": {
+        "mae": 8.512264078793427e-09,
+        "rmse": 3.160413345438015e-08,
+        "max_abs_error": 2.384185791015625e-07
+      },
+      "state_error": {
+        "mae": 0.0,
+        "rmse": 0.0,
+        "max_abs_error": 0.0
+      },
+      "token_ids_exact": true,
+      "token_mask_exact": true
+    },
+    {
+      "sample": {
+        "episode_index": 27,
+        "task_index": 9,
+        "frame_index": 0,
+        "action_seed": 58800912
+      },
+      "image_error": {
+        "mae": 6.060948483839941e-09,
+        "rmse": 2.0763089578252767e-08,
+        "max_abs_error": 2.384185791015625e-07
+      },
+      "state_error": {
+        "mae": 0.0,
+        "rmse": 0.0,
+        "max_abs_error": 0.0
+      },
+      "token_ids_exact": true,
+      "token_mask_exact": true
+    },
+    {
+      "sample": {
+        "episode_index": 379,
+        "task_index": 10,
+        "frame_index": 55,
+        "action_seed": 1636946508
+      },
+      "image_error": {
+        "mae": 8.932678004687963e-09,
+        "rmse": 3.118924136139343e-08,
+        "max_abs_error": 2.384185791015625e-07
+      },
+      "state_error": {
+        "mae": 0.0,
+        "rmse": 0.0,
+        "max_abs_error": 0.0
+      },
+      "token_ids_exact": true,
+      "token_mask_exact": true
+    },
+    {
+      "sample": {
+        "episode_index": 381,
+        "task_index": 11,
+        "frame_index": 134,
+        "action_seed": 511682298
+      },
+      "image_error": {
+        "mae": 8.379174687433988e-09,
+        "rmse": 2.96023203633314e-08,
+        "max_abs_error": 2.384185791015625e-07
+      },
+      "state_error": {
+        "mae": 0.0,
+        "rmse": 0.0,
+        "max_abs_error": 0.0
+      },
+      "token_ids_exact": true,
+      "token_mask_exact": true
+    },
+    {
+      "sample": {
+        "episode_index": 382,
+        "task_index": 12,
+        "frame_index": 0,
+        "action_seed": 1055681843
+      },
+      "image_error": {
+        "mae": 8.618447585225416e-09,
+        "rmse": 3.0266640391482416e-08,
+        "max_abs_error": 2.384185791015625e-07
+      },
+      "state_error": {
+        "mae": 0.0,
+        "rmse": 0.0,
+        "max_abs_error": 0.0
+      },
+      "token_ids_exact": true,
+      "token_mask_exact": true
+    },
+    {
+      "sample": {
+        "episode_index": 384,
+        "task_index": 13,
+        "frame_index": 55,
+        "action_seed": 1349456236
+      },
+      "image_error": {
+        "mae": 8.685560715093743e-09,
+        "rmse": 3.084819318945772e-08,
+        "max_abs_error": 2.384185791015625e-07
+      },
+      "state_error": {
+        "mae": 0.0,
+        "rmse": 0.0,
+        "max_abs_error": 0.0
+      },
+      "token_ids_exact": true,
+      "token_mask_exact": true
+    },
+    {
+      "sample": {
+        "episode_index": 385,
+        "task_index": 14,
+        "frame_index": 80,
+        "action_seed": 1800627489
+      },
+      "image_error": {
+        "mae": 6.435357136069797e-09,
+        "rmse": 2.6177057904892575e-08,
+        "max_abs_error": 2.384185791015625e-07
+      },
+      "state_error": {
+        "mae": 0.0,
+        "rmse": 0.0,
+        "max_abs_error": 0.0
+      },
+      "token_ids_exact": true,
+      "token_mask_exact": true
+    },
+    {
+      "sample": {
+        "episode_index": 386,
+        "task_index": 15,
+        "frame_index": 0,
+        "action_seed": 1623094436
+      },
+      "image_error": {
+        "mae": 8.749945360856751e-09,
+        "rmse": 3.063979615839574e-08,
+        "max_abs_error": 2.384185791015625e-07
+      },
+      "state_error": {
+        "mae": 0.0,
+        "rmse": 0.0,
+        "max_abs_error": 0.0
+      },
+      "token_ids_exact": true,
+      "token_mask_exact": true
+    },
+    {
+      "sample": {
+        "episode_index": 388,
+        "task_index": 16,
+        "frame_index": 44,
+        "action_seed": 1267348515
+      },
+      "image_error": {
+        "mae": 7.483019241287062e-09,
+        "rmse": 2.6890259414775958e-08,
+        "max_abs_error": 2.384185791015625e-07
+      },
+      "state_error": {
+        "mae": 0.0,
+        "rmse": 0.0,
+        "max_abs_error": 0.0
+      },
+      "token_ids_exact": true,
+      "token_mask_exact": true
+    },
+    {
+      "sample": {
+        "episode_index": 394,
+        "task_index": 17,
+        "frame_index": 99,
+        "action_seed": 3488212482
+      },
+      "image_error": {
+        "mae": 9.672930900705978e-09,
+        "rmse": 3.260273389422477e-08,
+        "max_abs_error": 2.384185791015625e-07
+      },
+      "state_error": {
+        "mae": 0.0,
+        "rmse": 0.0,
+        "max_abs_error": 0.0
+      },
+      "token_ids_exact": true,
+      "token_mask_exact": true
+    },
+    {
+      "sample": {
+        "episode_index": 444,
+        "task_index": 18,
+        "frame_index": 0,
+        "action_seed": 2720826873
+      },
+      "image_error": {
+        "mae": 8.793032672353244e-09,
+        "rmse": 3.0652657534993934e-08,
+        "max_abs_error": 2.384185791015625e-07
+      },
+      "state_error": {
+        "mae": 0.0,
+        "rmse": 0.0,
+        "max_abs_error": 0.0
+      },
+      "token_ids_exact": true,
+      "token_mask_exact": true
+    },
+    {
+      "sample": {
+        "episode_index": 399,
+        "task_index": 19,
+        "frame_index": 67,
+        "action_seed": 3153769267
+      },
+      "image_error": {
+        "mae": 7.217067832243629e-09,
+        "rmse": 2.7816604176993645e-08,
+        "max_abs_error": 2.384185791015625e-07
+      },
+      "state_error": {
+        "mae": 0.0,
+        "rmse": 0.0,
+        "max_abs_error": 0.0
+      },
+      "token_ids_exact": true,
+      "token_mask_exact": true
+    },
+    {
+      "sample": {
+        "episode_index": 829,
+        "task_index": 20,
+        "frame_index": 121,
+        "action_seed": 2161002854
+      },
+      "image_error": {
+        "mae": 1.4030395808125226e-08,
+        "rmse": 4.05137585754235e-08,
+        "max_abs_error": 2.384185791015625e-07
+      },
+      "state_error": {
+        "mae": 0.0,
+        "rmse": 0.0,
+        "max_abs_error": 0.0
+      },
+      "token_ids_exact": true,
+      "token_mask_exact": true
+    },
+    {
+      "sample": {
+        "episode_index": 808,
+        "task_index": 21,
+        "frame_index": 0,
+        "action_seed": 750111757
+      },
+      "image_error": {
+        "mae": 1.4641083604753172e-08,
+        "rmse": 4.1744078986673606e-08,
+        "max_abs_error": 2.384185791015625e-07
+      },
+      "state_error": {
+        "mae": 0.0,
+        "rmse": 0.0,
+        "max_abs_error": 0.0
+      },
+      "token_ids_exact": true,
+      "token_mask_exact": true
+    },
+    {
+      "sample": {
+        "episode_index": 810,
+        "task_index": 22,
+        "frame_index": 64,
+        "action_seed": 3617873033
+      },
+      "image_error": {
+        "mae": 1.492890078225173e-08,
+        "rmse": 4.197946835877147e-08,
+        "max_abs_error": 2.384185791015625e-07
+      },
+      "state_error": {
+        "mae": 0.0,
+        "rmse": 0.0,
+        "max_abs_error": 0.0
+      },
+      "token_ids_exact": true,
+      "token_mask_exact": true
+    },
+    {
+      "sample": {
+        "episode_index": 811,
+        "task_index": 23,
+        "frame_index": 117,
+        "action_seed": 392598317
+      },
+      "image_error": {
+        "mae": 1.491499309243712e-08,
+        "rmse": 4.207918727507844e-08,
+        "max_abs_error": 2.384185791015625e-07
+      },
+      "state_error": {
+        "mae": 0.0,
+        "rmse": 0.0,
+        "max_abs_error": 0.0
+      },
+      "token_ids_exact": true,
+      "token_mask_exact": true
+    },
+    {
+      "sample": {
+        "episode_index": 813,
+        "task_index": 24,
+        "frame_index": 0,
+        "action_seed": 2750435063
+      },
+      "image_error": {
+        "mae": 1.4210665237139134e-08,
+        "rmse": 4.071289200079588e-08,
+        "max_abs_error": 2.384185791015625e-07
+      },
+      "state_error": {
+        "mae": 0.0,
+        "rmse": 0.0,
+        "max_abs_error": 0.0
+      },
+      "token_ids_exact": true,
+      "token_mask_exact": true
+    },
+    {
+      "sample": {
+        "episode_index": 814,
+        "task_index": 25,
+        "frame_index": 87,
+        "action_seed": 3570347120
+      },
+      "image_error": {
+        "mae": 1.4534824307096036e-08,
+        "rmse": 4.14722673918628e-08,
+        "max_abs_error": 2.384185791015625e-07
+      },
+      "state_error": {
+        "mae": 0.0,
+        "rmse": 0.0,
+        "max_abs_error": 0.0
+      },
+      "token_ids_exact": true,
+      "token_mask_exact": true
+    },
+    {
+      "sample": {
+        "episode_index": 816,
+        "task_index": 26,
+        "frame_index": 110,
+        "action_seed": 3255063261
+      },
+      "image_error": {
+        "mae": 1.517336537896578e-08,
+        "rmse": 4.25060223271349e-08,
+        "max_abs_error": 2.384185791015625e-07
+      },
+      "state_error": {
+        "mae": 0.0,
+        "rmse": 0.0,
+        "max_abs_error": 0.0
+      },
+      "token_ids_exact": true,
+      "token_mask_exact": true
+    },
+    {
+      "sample": {
+        "episode_index": 827,
+        "task_index": 27,
+        "frame_index": 0,
+        "action_seed": 3320270834
+      },
+      "image_error": {
+        "mae": 1.3521495626870697e-08,
+        "rmse": 3.958700123033234e-08,
+        "max_abs_error": 2.384185791015625e-07
+      },
+      "state_error": {
+        "mae": 0.0,
+        "rmse": 0.0,
+        "max_abs_error": 0.0
+      },
+      "token_ids_exact": true,
+      "token_mask_exact": true
+    },
+    {
+      "sample": {
+        "episode_index": 821,
+        "task_index": 28,
+        "frame_index": 65,
+        "action_seed": 239429282
+      },
+      "image_error": {
+        "mae": 1.4439289467797304e-08,
+        "rmse": 4.1192713494822634e-08,
+        "max_abs_error": 2.384185791015625e-07
+      },
+      "state_error": {
+        "mae": 0.0,
+        "rmse": 0.0,
+        "max_abs_error": 0.0
+      },
+      "token_ids_exact": true,
+      "token_mask_exact": true
+    },
+    {
+      "sample": {
+        "episode_index": 826,
+        "task_index": 29,
+        "frame_index": 144,
+        "action_seed": 3827116015
+      },
+      "image_error": {
+        "mae": 1.2444123361395517e-08,
+        "rmse": 3.697516907632119e-08,
+        "max_abs_error": 2.384185791015625e-07
+      },
+      "state_error": {
+        "mae": 0.0,
+        "rmse": 0.0,
+        "max_abs_error": 0.0
+      },
+      "token_ids_exact": true,
+      "token_mask_exact": true
+    },
+    {
+      "sample": {
+        "episode_index": 1261,
+        "task_index": 30,
+        "frame_index": 0,
+        "action_seed": 1673592738
+      },
+      "image_error": {
+        "mae": 8.795988530134006e-09,
+        "rmse": 3.105595548884649e-08,
+        "max_abs_error": 2.384185791015625e-07
+      },
+      "state_error": {
+        "mae": 0.0,
+        "rmse": 0.0,
+        "max_abs_error": 0.0
+      },
+      "token_ids_exact": true,
+      "token_mask_exact": true
+    },
+    {
+      "sample": {
+        "episode_index": 1262,
+        "task_index": 31,
+        "frame_index": 68,
+        "action_seed": 2946701405
+      },
+      "image_error": {
+        "mae": 9.0347308893494e-09,
+        "rmse": 3.1507034934649145e-08,
+        "max_abs_error": 2.384185791015625e-07
+      },
+      "state_error": {
+        "mae": 0.0,
+        "rmse": 0.0,
+        "max_abs_error": 0.0
+      },
+      "token_ids_exact": true,
+      "token_mask_exact": true
+    },
+    {
+      "sample": {
+        "episode_index": 1264,
+        "task_index": 32,
+        "frame_index": 89,
+        "action_seed": 1135500867
+      },
+      "image_error": {
+        "mae": 9.437674937847381e-09,
+        "rmse": 3.2500175061047636e-08,
+        "max_abs_error": 2.384185791015625e-07
+      },
+      "state_error": {
+        "mae": 0.0,
+        "rmse": 0.0,
+        "max_abs_error": 0.0
+      },
+      "token_ids_exact": true,
+      "token_mask_exact": true
+    },
+    {
+      "sample": {
+        "episode_index": 1267,
+        "task_index": 33,
+        "frame_index": 0,
+        "action_seed": 3001314363
+      },
+      "image_error": {
+        "mae": 8.841008517871765e-09,
+        "rmse": 3.127078937531655e-08,
+        "max_abs_error": 2.384185791015625e-07
+      },
+      "state_error": {
+        "mae": 0.0,
+        "rmse": 0.0,
+        "max_abs_error": 0.0
+      },
+      "token_ids_exact": true,
+      "token_mask_exact": true
+    },
+    {
+      "sample": {
+        "episode_index": 1272,
+        "task_index": 34,
+        "frame_index": 41,
+        "action_seed": 2040451029
+      },
+      "image_error": {
+        "mae": 8.343135959876236e-09,
+        "rmse": 3.035364413716336e-08,
+        "max_abs_error": 2.384185791015625e-07
+      },
+      "state_error": {
+        "mae": 0.0,
+        "rmse": 0.0,
+        "max_abs_error": 0.0
+      },
+      "token_ids_exact": true,
+      "token_mask_exact": true
+    },
+    {
+      "sample": {
+        "episode_index": 1278,
+        "task_index": 35,
+        "frame_index": 90,
+        "action_seed": 1573553818
+      },
+      "image_error": {
+        "mae": 9.936949633508144e-09,
+        "rmse": 3.318132803091901e-08,
+        "max_abs_error": 2.384185791015625e-07
+      },
+      "state_error": {
+        "mae": 0.0,
+        "rmse": 0.0,
+        "max_abs_error": 0.0
+      },
+      "token_ids_exact": true,
+      "token_mask_exact": true
+    },
+    {
+      "sample": {
+        "episode_index": 1280,
+        "task_index": 36,
+        "frame_index": 0,
+        "action_seed": 2946381644
+      },
+      "image_error": {
+        "mae": 8.624965630588122e-09,
+        "rmse": 3.077638904968627e-08,
+        "max_abs_error": 2.384185791015625e-07
+      },
+      "state_error": {
+        "mae": 0.0,
+        "rmse": 0.0,
+        "max_abs_error": 0.0
+      },
+      "token_ids_exact": true,
+      "token_mask_exact": true
+    },
+    {
+      "sample": {
+        "episode_index": 1286,
+        "task_index": 37,
+        "frame_index": 65,
+        "action_seed": 1989435650
+      },
+      "image_error": {
+        "mae": 8.94969313473363e-09,
+        "rmse": 3.1365126653585456e-08,
+        "max_abs_error": 2.384185791015625e-07
+      },
+      "state_error": {
+        "mae": 0.0,
+        "rmse": 0.0,
+        "max_abs_error": 0.0
+      },
+      "token_ids_exact": true,
+      "token_mask_exact": true
+    },
+    {
+      "sample": {
+        "episode_index": 1283,
+        "task_index": 38,
+        "frame_index": 120,
+        "action_seed": 2267030051
+      },
+      "image_error": {
+        "mae": 1.0613007361826021e-08,
+        "rmse": 3.4836105808867375e-08,
+        "max_abs_error": 2.384185791015625e-07
+      },
+      "state_error": {
+        "mae": 0.0,
+        "rmse": 0.0,
+        "max_abs_error": 0.0
+      },
+      "token_ids_exact": true,
+      "token_mask_exact": true
+    },
+    {
+      "sample": {
+        "episode_index": 1290,
+        "task_index": 39,
+        "frame_index": 0,
+        "action_seed": 3344939737
+      },
+      "image_error": {
+        "mae": 8.253133880013289e-09,
+        "rmse": 2.9758482815292448e-08,
+        "max_abs_error": 2.384185791015625e-07
+      },
+      "state_error": {
+        "mae": 0.0,
+        "rmse": 0.0,
+        "max_abs_error": 0.0
+      },
+      "token_ids_exact": true,
+      "token_mask_exact": true
+    }
+  ],
+  "extra_text_cases": [
+    "",
+    "hello\n",
+    "Pick up the cup!",
+    "\u6253\u5f00\u62bd\u5c49\uff0c\u7136\u540e\u62ff\u8d77\u676f\u5b50\u3002",
+    "put the white mug on the left plate and put the yellow and white mug on the right plateput the white mug on the left plate and put the yellow and white mug on the right plateput the white mug on the left plate and put the yellow and white mug on the right plateput the white mug on the left plate and put the yellow and white mug on the right plateput the white mug on the left plate and put the yellow and white mug on the right plateput the white mug on the left plate and put the yellow and white mug on the right plateput the white mug on the left plate and put the yellow and white mug on the right plateput the white mug on the left plate and put the yellow and white mug on the right plateput the white mug on the left plate and put the yellow and white mug on the right plateput the white mug on the left plate and put the yellow and white mug on the right plateput the white mug on the left plate and put the yellow and white mug on the right plateput the white mug on the left plate and put the yellow and white mug on the right plate"
+  ],
+  "extra_text_ids_masks_exact": true,
+  "input_convention": "RGB uint8 CHW, raw state of size8, literal task string",
+  "vision_panel_sha256": "376efbb96384cb0273b58efe5d147c9be8413a3e4b4990ae6c7cf34e9697e0bb",
+  "config_hashes": {
+    "tokenizer.json": "5ece781dc8d2b2f3e2f289ca0ae50b17cfc27dd27bfe7971bb8241e0b964331a",
+    "tokenizer_config.json": "dd9ce2ab89a3dd881bd9378f1a79b943a064b9275a7e1706d5b7b47b68977913",
+    "policy_preprocessor.json": "122ec5106602b1bf129f49690d05ab2f49748a0ac6119de55ea0677d4e90d248",
+    "config.json": "5c9f3ba9f5f37ea7024c9501b0b20b1941f232989c2167853cb46d9071a70dd7"
+  },
+  "hashes": {
+    "raw_panel.npz": "ab8216772c2525d7d24d8af7dc6a7e8e9845b298c8db45e17ee974afe4c82498",
+    "preprocess_reference.npz": "613be8a3288838ee131a974cecc27396e431741c13fb442655abc79e3e39318f",
+    "raw_inputs.npz": "cca351635bc682a7915c708c1f10dcb42f4e9195f882f5002085ba649801a25c",
+    "state_stats.npz": "d00c91ca18a56fbb3ac590175a6c4d2a71756aca90a65e5ec44c560b330a2489"
+  }
+}

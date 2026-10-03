@@ -10,3 +10,10 @@ __pycache__/
 # RKNN Toolkit temporary ONNX dumps generated in the working directory.
 /check[0-9]_*.onnx
 /.venv-teacher/
+
+# Only the selected board release is versioned under models/.
+/models/*
+!/models/final/
+*.egg-info/
+/build/
+/dist/

@@ -1,0 +1,22 @@
+{
+  "scope": "selected_local_QAT_pack_reference_not_original_FP",
+  "checkpoint_sha256": "9a9f6413e42c0f332fccbce9a0dc796af2790f82cf002f791cdbf7e01e1afca8",
+  "selected_pack_sha256": "0b1fd3ece496b777fb145e33ac03e51e14c7205a55fb246250707b6a77c29474",
+  "sample": {
+    "episode_index": 18,
+    "task_index": 0,
+    "frame_index": 0,
+    "action_seed": 2416662958
+  },
+  "num_steps": 10,
+  "min_period": 0.004,
+  "max_period": 4.0,
+  "expert_hidden_size": 720,
+  "cpu_prefix_parity_max_abs": 0.0,
+  "reference_kind": "selected_local_QAT_pack",
+  "hashes": {
+    "replay_inputs.npz": "62ee6635d9cca02f74e6aff59b733d575299e5d62eccb2d5d01ff2c13c7fb427",
+    "cpu_weights.npz": "0ace7ee0d75420dcfd637ab03b5ddb9f251e0d138596ee78fd3f055a83f211b8",
+    "fp_reference.npz": "946e12c7562a17fc717170ee23ea27061d84fdd75965d9ddf6d3df765d5015ac"
+  }
+}

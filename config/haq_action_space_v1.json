@@ -3,7 +3,7 @@
   "status": "provisional_parameterized_operator_space",
   "search_ready": false,
   "source": {
-    "tables_path": "docs/hardware/tables.json",
+    "tables_path": "config/hardware/tables.json",
     "tables_sha256": "e82a1d1814b8815a8f3e01b17d5377bbf052ca34fb78a53807ffe00867aea90c",
     "checkpoint_sha256": "9a9f6413e42c0f332fccbce9a0dc796af2790f82cf002f791cdbf7e01e1afca8"
   },

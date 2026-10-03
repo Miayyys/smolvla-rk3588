@@ -9,7 +9,7 @@
 - 首选 SmolVLA，首个任务 checkpoint 为 `lerobot/smolvla_libero`，数据为 `lerobot/libero`。开始实验前核对修订号及 checkpoint 自带的 processor。
 - GPU 服务器别名为 SSH 配置中的 `GPUServer`；2026-09-26 探测到 NVIDIA A10 23 GB。远端已建立 LeRobot/torchao 推理环境和独立 RKNN 探针环境；实例可能重启，运行前重新检查环境。
 - 相关嵌入式工程是 `/home/loser/Study/rk3588/LZAMP/`，仅作 RK3588 系统与 NPU 经验参考。不要假设其 RKLLM 路径直接支持 VLA。
-- `info.md` 是用户的量化学习笔记；`docs/quantization-technique-plan.md` 是当前实验路线。`docs/experiment-plan.md` 只保留项目启动时的历史方案。按实验结果更新路线，不把计划写成已完成结果。
+- `info.md` 是用户的量化学习笔记；`docs/project-route.md` 是当前实验路线。`docs/project-route.md 中的历史启动方案` 只保留项目启动时的历史方案。按实验结果更新路线，不把计划写成已完成结果。
 
 ## 实施顺序
 
@@ -23,4 +23,4 @@
 
 ## 实验记录
 
-按 `docs/experiments/README.md` 记录每个完成或验证的步骤，包括技术原理、精确配置、输入/划分和 hash、计算公式与原始数据、候选参数扫描图、选择依据、实际结果及结论边界。有效与无效结果都记录；曲线和阈值必须来自实际数据，不得将计划或示意图写成已测结果。先更新对应实验记录，再据证据修改 `docs/quantization-technique-plan.md` 的路线。
+按 `docs/project-route.md 的技术记录索引` 记录每个完成或验证的步骤，包括技术原理、精确配置、输入/划分和 hash、计算公式与原始数据、候选参数扫描图、选择依据、实际结果及结论边界。有效与无效结果都记录；曲线和阈值必须来自实际数据，不得将计划或示意图写成已测结果。先更新对应实验记录，再据证据修改 `docs/project-route.md` 的路线。

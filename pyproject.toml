@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "qvla"
+version = "0.1.0"
+description = "SmolVLA mixed-precision quantization and RK3588 deployment"
+requires-python = ">=3.10"
+dependencies = ["numpy>=1.24", "tokenizers==0.22.2"]
+
+[project.optional-dependencies]
+gpu = ["torch>=2.7,<2.8", "torchvision>=0.22,<0.23", "lerobot[smolvla,dataset]==0.6.1", "torchao==0.11.0", "safetensors>=0.4", "matplotlib>=3.8"]
+download = ["huggingface_hub>=1.6,<2", "requests>=2.31"]
+
+[tool.setuptools.packages.find]
+include = ["qvla*"]
+
+[tool.setuptools.package-data]
+"qvla.runtime" = ["*.c", "*.cpp", "*.h", "*.s", "*.ld"]
+"qvla.hardware" = ["*.c"]
+"qvla.distillation" = ["*.sh"]
+"qvla.evaluation" = ["*.sh"]
