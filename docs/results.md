@@ -540,3 +540,23 @@ MAE=mean(abs(board-fp))，relative_RMSE=RMSE(board-fp)/RMS(fp)，各组分别按
 - 面板入口：`python -m qvla.evaluation.runtime_optimization_panel --root models/final --inputs inputs.npz --output <目录> --sequence 0 --warmup 3 --repeats 20 --resources --options '{"vision_cores":["1","2"],"expert_core":"0"}'`。基线在`30bb6b2`源码快照下运行同一面板，不传options。
 - 完整小结、准确source/model hash：`runs/runtime_optimization_v1/summary.json`、`board_identity.json`；板端报告与原始采样：`board_results/final_benchmark/{baseline,optimized}/`。
 - 输入panel SHA256：`86f2c986b14035ebe1adbaefa0cb9416bb9ee7f9c7f29dd16c59b8d23f863c71`；由既有观测缓存索引0/4/25与NumPy seed42构建，测量只使用样本0。运行代码验证序列A/B/C/A也已通过。
+
+## 专家多核诊断结果（2026-10-14，尚未修复）
+
+固定输入、同一专家RKNN文件，每种有效配置回放6次：
+
+| 对象与配置 | 与单核基准逐位一致 | 重复最大差 |
+| --- | --- | ---: |
+| 专家前半子图，分别单用核0/1/2 | 是 | 0 |
+| 专家前半子图，双核0+1或三核协同 | 否 | 3.7893732190 |
+| 专家前半子图，标准C API三核 | 否 | 3.7893732190 |
+| 专家后半子图，核0 | 是 | 0 |
+| 专家后半子图，三核协同 | 否 | 1.6336455941 |
+| 独立MLP、QKV图，单/双/三核 | 是 | 0 |
+| 小QK/注意力：5头FP16/INT8，15头INT8，单/双/三核 | 是 | 0 |
+
+完整链路3次捕获显示：语言K/V和专家全部输入相同，首次可观察偏差发生在第0轮专家前半子图两个计算输出，早于BF16投影与Euler更新。标准C API核0先通过逐位对齐，再在三核复现偏差，基本排除Python分图调度和缓存复用。小图对照正常，不能把问题泛化成所有RKNN多核/注意力都不支持。
+
+具体内部根因仍未确定，已测试的额外等待、perf模式、局部WC及no_sram不是修复；全局WC触发超时，已排除。诊断中的早期布局快照错误也已剔除，详细无效结果与纠正依据见[路线诊断记录](project-route.md)。
+
+安全配置最终回放2次仍与旧基准逐位相同（最大差0），没有改模型、系统驱动或正式runtime库，维持已有视觉并行＋专家核0方案。此节是正确性诊断，不是新的任务成功率或性能评测。

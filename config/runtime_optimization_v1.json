@@ -41,5 +41,21 @@
     "optimized_successes": 2,
     "trajectory_bitwise_equal": true,
     "full40_rerun": false
+  },
+  "multicore_diagnostic": {
+    "scope": "selected compiled expert partitions only; not a general RK3588 precision-support limitation",
+    "validated_isolated_single_core_masks": [
+      1,
+      2,
+      4
+    ],
+    "rejected_cooperating_core_masks": [
+      3,
+      7
+    ],
+    "first_observed_failure": "step0 expert_before_projection.rknn computed outputs; identical language KV and all expert inputs",
+    "native_C_reproduced": true,
+    "fixed": false,
+    "evidence": "runs/expert_multicore_diagnostic_v1/summary.json"
   }
 }

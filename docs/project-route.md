@@ -6988,3 +6988,36 @@ Subsequent local experiment: a hash-pinned private runtime-copy patch to context
 专家三核组合固定输入的两次动作最大差0.4435998797，不能只用耗时选择；隔离结果指向专家核配置，具体内部原因未定位，不声称所有RKNN三核都失效。语言、视觉、专家和每个专家子图的计时只在此阶段用于解释最终瓶颈。
 
 最终验证配置为`config/runtime_optimization_v1.json`：两相机核1/2，专家核0。已完成基线与所选配置各预热3次、测量20次的同输入速度/进程树PSS测试，以及Object0/Goal0两项短闭环回归，没有重跑40任务。P50从7.255s降到5.406s，但PSS从1126.1MiB升至1579.7MiB。20次固定输出与两项完整执行轨迹都逐位一致。保留默认单核，实验配置为可选更快模式；未达到30Hz供给。详细结果、代价和原始数据身份见[results.md](results.md)的本次运行优化节。
+
+## 专家多核偏差诊断（2026-10-14，阶段定位，未修复）
+
+在`experiment/rk3588-runtime-optimization`继续诊断，正式runtime和所选调度不变。问题不是“两相机在不同单核并行”，而是让同一个已编译专家子图使用core_mask3/7协同执行。Toolkit/runtime2.3.2、driver0.9.8、Linux6.12.69-lzamp+；没有修改系统驱动、正式runtime二进制或模型权重。
+
+### 逐级证据
+
+1. 固定旧开发panel样本0与既有seed42噪声，核0/三核各完整前向3次；捕获语言prefix、pad、32份K/V以及专家每轮三个子图的输入/输出hash。三个运行中，语言与专家第0轮所有输入一致；第一处可观察偏差都是`expert_before_projection.rknn`的`/Add_38_output_0`、`/post_attention_layernorm_10/Mul_1_output_0`。它们是子图输出边界，不代表已经证明Add_38本身是首个错误算子。BF16小投影和Euler更新尚未发生，因此不是这两处引入首差。
+2. 将该子图第0轮输入冻结，每个核配置独立进程回放6次：mask1/2/4单核均逐位对齐；mask3双核、mask7三核均偏差且重复漂移，输出重复最大差3.7893732190。
+3. 使用标准C API：`rknn_init→set_core_mask→inputs_set→run→outputs_get`，明确按query的输入格式准备NHWC，不经过Python分图路由、静态输入缓存或语言进程。C核0逐位匹配；C三核复现同样3.7893732190的漂移。故不能归因于本项目Python线程或缓冲复用，但尚不能区分闭源runtime、已编译图与内核驱动的内部责任。
+4. `expert_after_projection.rknn`用自身基准输入独立回放：核0逐位匹配，三核同样漂移（重复最大差1.6336455941），不只前半子图受影响。
+
+### 对照与边界
+
+- 既有独立MLP、QKV控制图：mask1/3/7各6次均逐位匹配。
+- 新建小QK和Softmax注意力图：head_dim64、query50、KV227；5头FP16/INT8，以及15头INT8，在mask1/3/7各6次均逐位匹配。它们不包含完整专家的所有GQA、归一化、残差和融合布局，不能据此宣称所有注意力形状都正常。
+- 额外等待100ms后读输出、开启COLLECT_PERF、禁用SRAM请求，以及对7991296/1417216/184320字节分配分别试WC，均未消除原复杂子图偏差；这些不是有效修复。
+- 全局WC改动造成约6秒运行超时和内核soft reset，返回值即使稳定也无效，该对照已剔除。它只作用于诊断进程，未写系统库/驱动/全局环境。
+- 首轮冻结快照曾保存调用后的输入列表，而RKNNLite会把其四维输入条目改成NHWC；直接回放会二次转换。已按调用前shape和SHA逐项恢复，核0验证通过后才使用`frozen_correct_mask*`数据。旧`frozen_mask*`不作为有效证据。原始NCHW C对照同样因未匹配Lite布局被剔除，使用`native_layout_mask*`。
+- 只读ioctl跟踪确认三核确实混合提交mask1与mask7任务；追加的“hw_us”字段来自ABI原始值，未校验内核单位，不用于性能结论。operator perf仅作定位资料，不把诊断耗时当成正式加速结果。
+
+结论：已定位到**现有复杂专家图的多核执行路径**，尚未定位到具体内部算子、编译变换或驱动同步点，不能称已修复、不能泛化成RKNN不支持多核或不支持注意力。下一步需要恢复该终版QAT图的原始ONNX/编译中间产物，做节点边界二分；本地现有原始FP ONNX不是所选QAT专家图，不能拿它冒充等价源文件。
+
+### 代码与复现
+
+- `qvla/evaluation/diagnose_expert_multicore.py`：完整前向捕获、冻结子图回放、标准C回放及小图对照。
+- `qvla/evaluation/rknn_multicore_probe.c`：标准C API诊断库，无正式模型改动。
+- `qvla/evaluation/rknpu_submit_trace.c`：进程级只读任务提交跟踪。
+- `qvla/conversion/build_multicore_attention_control.py`：在RKNN Toolkit环境构建小QK/注意力对照；例如`--heads 15 --precisions int8 --output runs/expert_multicore_diagnostic_v1/attention_control15`。
+- 板端最小复现：`python -m qvla.evaluation.diagnose_expert_multicore --root models/final --frozen expert_diagnostic/core0/expert_before_projection.rknn.before_inputs.npz --core-mask 7 --repeats 6 --output <新目录>`；mask改1可做逐位基准。需要本次冻结fixture和相同版本环境，不能仅靠伪随机输入替代。
+- fixture、输入输出、C与Python报告、提交跟踪和perf原始数据位于`runs/expert_multicore_diagnostic_v1/board/expert_diagnostic/`；汇总、source hash及排除项在`runs/expert_multicore_diagnostic_v1/summary.json`。无效对照保留并明确标记，不计入有效结果。
+
+诊断结束后，恢复“视觉核1/2独立并行＋专家核0”完整回放2次，与旧基准逐位一致，最大差0。保持已有5.406秒配置，不启用有偏差的专家协同多核。质量、性能数字不因本次诊断重写，见[results.md](results.md)。
