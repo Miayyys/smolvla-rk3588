@@ -1,7 +1,8 @@
 """Resolve source assets after moving historical entry points into the package."""
 from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
-SOURCE_LAYOUT = {'analyze_mlp_clipping.py': 'qvla/evaluation/analyze_mlp_clipping.py',
+SOURCE_LAYOUT = {'benchmark_local_async.py': 'qvla/evaluation/benchmark_local_async.py',
+ 'analyze_mlp_clipping.py': 'qvla/evaluation/analyze_mlp_clipping.py',
  'analyze_rkllm_matmul_trace.py': 'qvla/evaluation/analyze_rkllm_matmul_trace.py',
  'audit_final_model_evaluation.py': 'qvla/evaluation/audit_final_model_evaluation.py',
  'audit_final_model_preprocessing.py': 'qvla/evaluation/audit_final_model_preprocessing.py',

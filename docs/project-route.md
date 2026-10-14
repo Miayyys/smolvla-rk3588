@@ -6950,3 +6950,10 @@ Subsequent local experiment: a hash-pinned private runtime-copy patch to context
 
 
 </details>
+
+
+## 本机30Hz异步供给可行性验证（2026-10-14）
+
+新增`qvla/evaluation/benchmark_local_async.py`，统一入口`evaluate.py local-async`。原模型、原processor及10步flow固定；使用既有隔离开发观测缓存，不重采测试episode、不改权重或量化图。60次完整前向计时后进行30秒、900tick影子异步消费；明确跳过计算延迟对应前缀及首块预填充。没有SO101设备操作，没有用7维LIBERO输出冒充六关节实机指令。未运行官方async/RTC，不声称硬实时或任务成功率。
+
+实测P50=0.153062s、P95=0.158795s，影子循环断粮0次；精确配置、hash、公式及数据见[results.md末节](results.md)。结论支持本机推理供给下一步实机测试，不改变此前量化质量结论。

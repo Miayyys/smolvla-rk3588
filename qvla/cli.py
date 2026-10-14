@@ -12,7 +12,7 @@ COMMANDS = {
     'distill': {'inputs': ('prepare_openvla_teacher_inputs.py', []), 'teacher': ('cache_openvla_teacher.py', []), 'review': ('review_teacher_labels.py', []), 'train': ('qat_train_haq.py', ['--mode', 'fp-distill'])},
     'quantize': {'qat': ('run_first8_v2_qat.py', ['--config', 'config/qat_distilled_v1_no_teacher_v1.json']), 'qat-train': ('qat_train_haq.py', ['--mode', 'qat']), 'ptq': ('pack_v2_ptq_control.py', [])},
     'convert': {'vision': ('convert_smolvla_vision_rknn.py', []), 'export': ('export_selected_qat_rknn.py', []), 'rknn': ('compile_selected_qat_rknn.py', []), 'partition': ('run_v1_partition_conversion.py', []), 'language-export': ('export_smolvla_rkllm_language.py', []), 'language': ('compile_rkllm_full_prefill_probe.py', [])},
-    'evaluate': {'gpu': ('eval_distill_qat_libero.py', []), 'board': ('run_smolvla_board_libero.py', []), 'resources': ('benchmark_smolvla_board_resources.py', []), 'report': ('report_final_model_comparison.py', []), 'replay': ('verify_v1_partitioned_replay.py', [])},
+    'evaluate': {'local-async': ('benchmark_local_async.py', []), 'gpu': ('eval_distill_qat_libero.py', []), 'board': ('run_smolvla_board_libero.py', []), 'resources': ('benchmark_smolvla_board_resources.py', []), 'report': ('report_final_model_comparison.py', []), 'replay': ('verify_v1_partitioned_replay.py', [])},
 }
 
 def main(group):

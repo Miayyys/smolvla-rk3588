@@ -469,3 +469,34 @@ MAE=mean(abs(board-fp))，relative_RMSE=RMSE(board-fp)/RMS(fp)，各组分别按
 
 
 </details>
+
+
+## 本机原始模型与30Hz异步供给测试（2026-10-14）
+
+测试设备RTX4060 Laptop约8GB，Torch2.7.1+cu118；原始SmolVLA checkpoint未改权重，保持加载后的FP32/BF16混合浮点参数（225/275个参数张量）、use_amp=false、10步flow推理。双相机RGB uint8 CHW 256×256及8维state来自既有40任务观测缓存，不接摄像头或机械臂；输出50×7动作。两CPU线程，未启用compile、额外autocast、量化或减少num_steps。
+
+| 项目 | 实测 |
+| --- | ---: |
+| 加载模型（不含首次预热） | 15.104s |
+| 预热/正式完整动作块次数 | 5 / 60 |
+| 完整动作块P50 / P95 / 最大耗时 | 0.153062 / 0.158795 / 0.176355s |
+| PyTorch进程内峰值CUDA allocated / reserved | 1.185 / 1.225GiB |
+| 30Hz下50动作的执行时间预算 | 1.666667s |
+| 按P95推算的计算提前量 | 至少5动作（约0.167s），未含设备I/O余量 |
+| 定时异步影子循环 | 30s / 900个tick |
+| 后台推理次数 / 断粮 / 请求丢弃 | 90 / 0 / 0 |
+| 后台动作块P50 / P95 | 0.151512 / 0.153313s |
+| 取动作tick间隔P50 / P95 | 33.334 / 33.450ms |
+| tick唤醒延迟P95 / 最大值 | 0.211 / 0.306ms |
+| 延后超过一个33.33ms周期的tick | 0 |
+
+串行时间包含CPU图像转float、processor、GPU传输、完整前向、后处理及动作回传CPU，显式CUDA同步。CUDA allocated只是PyTorch分配量，不等于整机nvidia-smi占用，更不等于此前板端PSS。异步先准备首块，再启动30Hz消费者；每10tick提交一条缓存观测，后台仅一个推理线程，将推理耗时对应的过期前缀跳过，替换未来动作。不是LeRobot官方async/RTC栈，也未做prefix conditioning、动作连续性或闭环任务质量验证。
+
+结论：本次工作负载可满足**30Hz动作供给**；不满足每33.33ms从新图像推理一整块的**30Hz策略前向**。1.67s是把50步按30Hz执行的算术预算，不证明改变训练数据执行频率后质量保持。SO101通常使用六电机关节目标，本checkpoint是LIBERO七维动作，不能删一维或直接发送；需SO101数据微调/对应checkpoint、校准、摄像头和串口周期实测后再评价实机控制。
+
+复现：`.venv-haq-local/bin/python scripts/evaluate.py local-async --repeats 60 --warmup 5 --seconds 30 --hz 30 --request-every 10`。原始报告/逐次耗时在`runs/local_async30_v1/report.json`、`timings.npz`和`runs/local_async30_v1.log`。
+
+- checkpoint SHA256：`9a9f6413e42c0f332fccbce9a0dc796af2790f82cf002f791cdbf7e01e1afca8`。
+- 观测缓存SHA256：`e1861f28f234b533c33b97104f64ea51351e0789f35afc8df72cb5850e7b311c`。
+- 实际运行源码快照SHA256：`de2c4a60b979162da7bd2a060040f8cd7dc13904c34695865ac61e32ca9161d6`，快照`runs/local_async30_v1/benchmark_executed.py`；随后只补参数校验/hash记录字段和统一CLI入口。
+- 官方参考：[SmolVLA实机微调](https://huggingface.co/docs/lerobot/smolvla)、[LeRobot v0.6.1 SO follower六电机接口](https://github.com/huggingface/lerobot/blob/v0.6.1/src/lerobot/robots/so_follower/so_follower.py)。
