@@ -500,3 +500,43 @@ MAE=mean(abs(board-fp))，relative_RMSE=RMSE(board-fp)/RMS(fp)，各组分别按
 - 观测缓存SHA256：`e1861f28f234b533c33b97104f64ea51351e0789f35afc8df72cb5850e7b311c`。
 - 实际运行源码快照SHA256：`de2c4a60b979162da7bd2a060040f8cd7dc13904c34695865ac61e32ca9161d6`，快照`runs/local_async30_v1/benchmark_executed.py`；随后只补参数校验/hash记录字段和统一CLI入口。
 - 官方参考：[SmolVLA实机微调](https://huggingface.co/docs/lerobot/smolvla)、[LeRobot v0.6.1 SO follower六电机接口](https://github.com/huggingface/lerobot/blob/v0.6.1/src/lerobot/robots/so_follower/so_follower.py)。
+
+
+## 板端运行优化：速度与内存权衡（2026-10-14）
+
+本节比较**同一终版模型的旧运行代码与实验分支代码**，不是原GPU浮点模型与量化模型，也不更新此前40任务模型成功率。模型、量化精度、图hash和10步Euler不变；双相机独立RKNN context在核1/2并行，动作专家及native BF16小投影保留核0，RKLLM保持原native组件与CPU1线程配置。
+
+| 指标 | 旧版单核 | 优化版双相机并行 |
+| --- | ---: | ---: |
+| 完整50步动作块P50 | 7.255339s | 5.405506s |
+| 完整动作块P95 | 7.438293s | 6.209123s |
+| 初始化耗时 | 2.041s | 2.615s |
+| 采样峰值进程树PSS | 1126.136MiB | 1579.669MiB |
+| 正式重复次数 | 20 | 20 |
+| 固定输入重复最大动作差 | 0 | 0 |
+| 新旧20次完整动作比较 | — | 逐元素完全相同，最大差0 |
+
+完整延迟降低**25.50%**，速度比**1.342×**。但峰值PSS增加**453.533MiB（+40.27%）**。缓冲复用减少重复分配不等于总峰值下降，第二视觉context的代价更大；保留默认单核模式，通过配置显式选择更快模式。未采用不稳定的专家三核配置，不把加载成功当作精度通过。
+
+速度为相同图像/state/指令/噪声的完整predict，不含模型初始化、SSH、仿真和报告序列化；两个版本各预热3次、正式20次，顺序执行，没有与闭环测试并行。0.5s采样PPid进程树，均观察到2个进程（含RKLLM worker），PSS完整；不含未映射驱动DMA，可能遗漏瞬时峰值。采样NPU频率均为1GHz，未强制修改系统频率；温度及逐次数据保留在原始资源报告。
+
+优化版阶段中位数：视觉2.104s、语言及K/V处理0.483s、10步专家2.710s、预处理0.125s。各阶段中位数不能直接相加视为整体P50。专家仍是主要瓶颈之一；不能把总耗时归因于Python调度。
+
+### 两项短闭环回归
+
+| 任务 | 旧版 | 优化版 | 执行步数 | 完整轨迹 |
+| --- | --- | --- | --- | --- |
+| libero_object:0 | 成功 | 成功 | 141→141 | 逐元素完全一致 |
+| libero_goal:0 | 成功 | 成功 | 257→257 | 逐元素完全一致 |
+
+固定init_state0/env_seed0，噪声沿用`100000*(suite_index+1)+task_id`及CUDA Generator；新旧所有query输入hash一致。只作两任务运行代码回归，不是新的40任务或多seed质量证明。原始图像、噪声、每块动作和实际执行轨迹在`runs/runtime_optimization_v1/quality2/`。其他新观测不保证必然逐位一致，仍受后端可复现性边界约束。
+
+### 30Hz结论与复现
+
+50动作按30Hz执行仅有1.6667s预算，目前P50仍为5.406s，按计算供给约9.25动作/秒，尚需额外约3.24倍加速才刚达标。异步不能弥补持续吞吐不足；未连接SO101，也未减少flow步数或重训模型。
+
+- 分支：`experiment/rk3588-runtime-optimization`；基线：`30bb6b2`。
+- 配置：`config/runtime_optimization_v1.json`，默认runtime仍保留单核，不修改`models/final`。
+- 面板入口：`python -m qvla.evaluation.runtime_optimization_panel --root models/final --inputs inputs.npz --output <目录> --sequence 0 --warmup 3 --repeats 20 --resources --options '{"vision_cores":["1","2"],"expert_core":"0"}'`。基线在`30bb6b2`源码快照下运行同一面板，不传options。
+- 完整小结、准确source/model hash：`runs/runtime_optimization_v1/summary.json`、`board_identity.json`；板端报告与原始采样：`board_results/final_benchmark/{baseline,optimized}/`。
+- 输入panel SHA256：`86f2c986b14035ebe1adbaefa0cb9416bb9ee7f9c7f29dd16c59b8d23f863c71`；由既有观测缓存索引0/4/25与NumPy seed42构建，测量只使用样本0。运行代码验证序列A/B/C/A也已通过。

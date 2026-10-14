@@ -1,0 +1,45 @@
+{
+  "scope": "experimental runtime scheduling; selected model weights/precision and 10 flow steps unchanged",
+  "runtime_options": {
+    "vision_cores": [
+      "1",
+      "2"
+    ],
+    "expert_core": "0"
+  },
+  "selection": "Validated optional faster mode; 20-run fixed-input and two closed-loop trajectories match exactly; higher memory cost; default single-core retained",
+  "baseline_commit": "30bb6b2",
+  "rejected_options": [
+    {
+      "expert_core": "all",
+      "reason": "fixed input repeated actions changed; max abs across repeats 0.4435998797416687; no quality approval"
+    }
+  ],
+  "constraints": {
+    "weights_changed": false,
+    "flow_steps": 10,
+    "one_inference_producer_per_runtime": true,
+    "native_bf16_core": "unchanged core0",
+    "rkllm_cpu_threads": 1,
+    "cross_observation_kv_reuse": false
+  },
+  "performance": {
+    "baseline_p50_ms": 7255.338649000009,
+    "optimized_p50_ms": 5405.505543999993,
+    "baseline_peak_pss_mib": 1126.1357421875,
+    "optimized_peak_pss_mib": 1579.6689453125,
+    "warmup": 3,
+    "repeats": 20,
+    "default_runtime_changed": false
+  },
+  "quality_regression": {
+    "tasks": [
+      "libero_object:0",
+      "libero_goal:0"
+    ],
+    "baseline_successes": 2,
+    "optimized_successes": 2,
+    "trajectory_bitwise_equal": true,
+    "full40_rerun": false
+  }
+}

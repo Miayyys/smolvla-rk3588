@@ -44,6 +44,7 @@ class RKLLMLanguage:
             text=True, bufsize=1)
         self.log=(root/'rkllm_worker.log').open('w')
         self.allowed = manifest['supported_tokens']
+        self.cache_outputs=None;self.cache_valid=None
         try:self._read('ready')
         except Exception:
             self.close();raise
@@ -70,6 +71,13 @@ class RKLLMLanguage:
         if struct.unpack('<III',b[:12]) != (0,8,n):raise ValueError('Cache header mismatch')
         if not np.array_equal(np.frombuffer(b,'<i4',n,12),np.arange(100,100+n)):raise ValueError('Cache IDs mismatch')
         if b[-16:]!=bytes.fromhex('6e736567010000000000000000000000'):raise ValueError('Cache footer mismatch')
+        shape=(1,5,prefix.shape[1],64)
+        if self.cache_outputs is None or self.cache_outputs[0].shape!=shape:
+            self.cache_outputs=[np.zeros(shape,dtype='f4') for _ in range(32)]
+            self.cache_valid=valid.copy()
+        elif not np.array_equal(self.cache_valid,valid):
+            for value in self.cache_outputs:value.fill(0)
+            self.cache_valid=valid.copy()
         outputs=[];size=n*5*64*2
         for i in range(16):
             pair=[]
@@ -81,7 +89,8 @@ class RKLLMLanguage:
                 if key:v=v.reshape(n,5,32,2).transpose(1,0,3,2).reshape(1,5,n,64)
                 else:v=v.reshape(5,64,n).transpose(0,2,1)[None]
                 if not np.isfinite(v).all():raise ValueError('Invalid native K/V')
-                full=np.zeros((1,5,prefix.shape[1],64),dtype='f4');full[:,:,valid,:]=v[:,:,:actual,:];pair.append(full)
+                full=self.cache_outputs[2*i+(0 if key else 1)]
+                full[:,:,valid,:]=v[:,:,:actual,:];pair.append(full)
             outputs.extend(pair)
         return outputs
 

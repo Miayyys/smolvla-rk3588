@@ -25,10 +25,11 @@ def reply(value):print('QVLA_REPLY '+json.dumps(value),flush=True)
 
 
 def main():
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--root',type=Path,required=True);args=p.parse_args()
-    runtime=BoardSmolVLA(args.root)
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--root',type=Path,required=True);p.add_argument('--runtime-config',type=Path);args=p.parse_args()
+    options=json.loads(args.runtime_config.read_text())['runtime_options'] if args.runtime_config else None
+    runtime=BoardSmolVLA(args.root,options=options)
     try:
-        reply({'ready':True,'checkpoint_sha256':runtime.config['checkpoint_sha256'],'graphs':runtime.hashes,'core':'NPU_CORE_0','language_backend':'rkllm' if runtime.language else 'rknn'})
+        reply({'ready':True,'checkpoint_sha256':runtime.config['checkpoint_sha256'],'graphs':runtime.hashes,'core':'NPU_CORE_0','language_backend':'rkllm' if runtime.language else 'rknn','runtime_options':runtime.options})
         for line in sys.stdin:
             req=json.loads(line)
             if req.get('quit'):break

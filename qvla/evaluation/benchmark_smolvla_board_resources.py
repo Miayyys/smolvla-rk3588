@@ -53,6 +53,7 @@ def sample(pid):
 
 p=argparse.ArgumentParser(description=__doc__)
 p.add_argument('--root',type=Path,required=True);p.add_argument('--output',type=Path,required=True)
+p.add_argument('--runtime-config',type=Path)
 p.add_argument('--warmup',type=int,default=3);p.add_argument('--repeats',type=int,default=20)
 a=p.parse_args();a.output.mkdir(parents=True,exist_ok=True)
 if a.repeats<10:raise ValueError('At least 10 measured repetitions')
@@ -72,7 +73,8 @@ def monitor():
             previous_time=now;samples.append(row);f.write(json.dumps(row)+'\n');f.flush();stop.wait(interval)
 thread=threading.Thread(target=monitor,daemon=True);thread.start();model=None;values=[];timings=[];begin=time.monotonic()
 try:
-    model=BoardSmolVLA(a.root);init_seconds=time.monotonic()-begin
+    options=json.loads(a.runtime_config.read_text())['runtime_options'] if a.runtime_config else None
+    model=BoardSmolVLA(a.root,options=options);init_seconds=time.monotonic()-begin
     for i in range(a.warmup+a.repeats):
         phase='warmup' if i<a.warmup else 'measured'
         actions,timing=model.predict(raw)
@@ -89,7 +91,7 @@ cpu=[x['cpu_percent_one_core_100'] for x in measured if x['cpu_percent_one_core_
 loads=[x['npu_load_percent'] for x in measured if len(x['npu_load_percent'])==3]
 from qvla.runtime.rknn_board_full_replay import digest
 report={'scope':'fixed raw-input complete board policy including preprocessing; monitored parent and all descendants',
- 'root':str(a.root),'loaded_graphs':model.hashes,'language_backend':'rkllm' if model.language else 'rknn',
+ 'root':str(a.root),'runtime_options':model.options,'loaded_graphs':model.hashes,'language_backend':'rkllm' if model.language else 'rknn',
  'raw_input_sha256':digest(a.root/'raw_inputs.npz'),'manifest_sha256':digest(a.root/'deployment_manifest.json') if (a.root/'deployment_manifest.json').exists() else None,
  'warmup':a.warmup,'repeats':a.repeats,'sample_interval_seconds':interval,'initialization_seconds':init_seconds,
  'inference_ms':t,'p50_ms':float(np.median(t)),'p95_ms':float(np.percentile(t,95)),'mean_ms':float(np.mean(t)),

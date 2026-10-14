@@ -27,12 +27,13 @@ class NativeBF16Projection:
         rc=ctypes.c_int()
         self.handle=self.lib.qvla_bf16_open(str(path).encode(),50*720,50*2048,ctypes.byref(rc))
         if not self.handle:raise RuntimeError(f'Native BF16 init failed: {rc.value}')
+        self.output=np.empty((1,50,2048),dtype=np.float32)
 
     def inference(self,inputs,**kwargs):
         if len(inputs)!=1 or inputs[0].shape!=(1,50,720):raise ValueError('Unsupported BF16 projection input')
         x=np.ascontiguousarray(inputs[0],dtype=np.float32)
         if not np.isfinite(x).all():raise ValueError('Nonfinite BF16 input')
-        y=np.empty((1,50,2048),dtype=np.float32)
+        y=self.output
         rc=self.lib.qvla_bf16_run(self.handle,x.ctypes.data,y.ctypes.data)
         if rc:raise RuntimeError(f'Native BF16 execution failed: {rc}')
         if not np.isfinite(y).all():raise RuntimeError('Nonfinite BF16 result')

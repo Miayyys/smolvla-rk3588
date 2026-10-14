@@ -37,12 +37,13 @@ def batch_observation(value):
 
 
 class BoardClient:
-    def __init__(self,root,remote_root='/root/qvla/models/final',board_host='root@10.42.0.252'):
+    def __init__(self,root,remote_root='/root/qvla/models/final',board_host='root@10.42.0.252',server_command=None):
         self.log=(root/'board_runtime.log').open('w');self.counter=0
         command=['ssh','-F','/dev/null','-o','BatchMode=yes','-o','ConnectTimeout=5',board_host,
                  'cd '+shlex.quote(remote_root)+' && export OPENBLAS_NUM_THREADS=1 PYTHONPATH=/root/qvla_board_test/python_site && '
                  'if [ -f ../../scripts/deploy.py ]; then python3 -u ../../scripts/deploy.py serve --root .; '
                  'else python3 -u serve_smolvla_board_stdio.py --root .; fi']
+        if server_command is not None:command[-1]=server_command
         self.proc=subprocess.Popen(command,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,bufsize=1)
         self.ready=self.read()
         if not self.ready.get('ready'):raise RuntimeError('Board did not initialize')

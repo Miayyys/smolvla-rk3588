@@ -128,3 +128,22 @@ QAT默认配置为`config/qat_distilled_v1_no_teacher_v1.json`，可用`--config
 - 同一原始NPZ输入，旧平铺runtime与新功能包输出逐元素完全一致，最大差0；不是重新40任务评测。
 
 历史source hash对应整理前版本，Git提交`22fac9d`保存旧结构。测试期间未改模型权重，也未覆盖板端已有部署。
+
+## 实验分支：运行缓冲与调度优化
+
+在`experiment/rk3588-runtime-optimization`中，模型、精度图和10步flow保持不变；默认`BoardSmolVLA(root)`仍使用单核0。选择实验调度时显式传配置：
+
+```bash
+python3 scripts/deploy.py infer --root models/final --runtime-config config/runtime_optimization_v1.json --input observation.npz --output actions.npz
+python3 scripts/deploy.py serve --root models/final --runtime-config config/runtime_optimization_v1.json
+```
+
+配置中的`runtime_options`控制`vision_cores`和`expert_core`：两视觉context分别用核1/2，专家用核0。BF16小投影和RKLLM仍使用原native实现。`language_cpu_threads`接口可选1/3，本次保留清单中的1线程，未声称调优收益。
+
+- 该runtime持有可复用数组，一个实例必须顺序调用`predict`；异步消费者应使用单个推理生产者，不要对同一实例并发预测。
+- K/V只在同一个动作块内复用，新图像/状态必须重算语言prefix；新指令有效token集合变化时清零旧散射缓冲。
+- 多核可加载不代表数值正确。本次专家`all`出现固定输入重复漂移，已从所选配置排除，不建议启用。
+- 双相机并行增加一个视觉context，需要对照结果中的PSS及实际MemAvailable决定是否采用；不是免费加速。
+- `evaluate.py runtime-panel`是板端固定输入短测/资源入口；`evaluate.py runtime-regression`是开发机发起的两项板端LIBERO回归，所需输入和baseline快照路径见路线记录。实验脚本不是新机器一键复现全部旧环境的安装器。
+
+最终实测与验收状态见[results.md](results.md)的运行优化节；本节不把短调度筛选当作完整任务质量证明。

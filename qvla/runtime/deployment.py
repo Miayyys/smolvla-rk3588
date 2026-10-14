@@ -65,6 +65,7 @@ def stage(args):
             return item
         bundle.add(PROJECT/'qvla',arcname='qvla',filter=source_filter)
         bundle.add(PROJECT/'scripts',arcname='scripts',filter=source_filter)
+        bundle.add(PROJECT/'config',arcname='config',filter=source_filter)
         if not args.code_only:
             bundle.add(args.root,arcname='models/final')
             for file in args.runtime_dir.rglob('*'):
@@ -107,22 +108,27 @@ def main():
     s.add_argument('--code-only',action='store_true')
     serve=commands.add_parser('serve',help='Serve inference over stdio on RK3588')
     serve.add_argument('--root',type=Path,default=DEFAULT_ROOT)
+    serve.add_argument('--runtime-config',type=Path)
     infer=commands.add_parser('infer',help='Run one raw observation NPZ on RK3588')
     infer.add_argument('--root',type=Path,default=DEFAULT_ROOT)
     infer.add_argument('--input',type=Path,required=True)
     infer.add_argument('--output',type=Path,required=True)
+    infer.add_argument('--runtime-config',type=Path)
     args=p.parse_args()
     if args.stage=='verify':print(json.dumps(verify(args.root,args.runtime_dir)))
     elif args.stage=='stage':stage(args)
     elif args.stage=='serve':
         import sys
         from qvla.runtime.serve_smolvla_board_stdio import main as serve_main
-        sys.argv=[sys.argv[0],'--root',str(args.root)];serve_main()
+        sys.argv=[sys.argv[0],'--root',str(args.root)]
+        if args.runtime_config:sys.argv+=['--runtime-config',str(args.runtime_config)]
+        serve_main()
     else:
         import numpy as np
         from qvla.runtime.smolvla_board_runtime import BoardSmolVLA
         with np.load(args.input,allow_pickle=False) as values:raw={name:values[name].copy() for name in values.files}
-        model=BoardSmolVLA(args.root)
+        options=json.loads(args.runtime_config.read_text())['runtime_options'] if args.runtime_config else None
+        model=BoardSmolVLA(args.root,options=options)
         try:
             actions,timing=model.predict(raw)
             args.output.parent.mkdir(parents=True,exist_ok=True)

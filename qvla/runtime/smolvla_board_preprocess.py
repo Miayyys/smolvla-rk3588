@@ -10,6 +10,7 @@ if __package__ in (None, ""):
     _sys.path.insert(0, str(_root))
 
 import json
+from functools import lru_cache
 from pathlib import Path
 import numpy as np
 from tokenizers import Tokenizer
@@ -58,9 +59,17 @@ class SmolVLAPreprocessor:
         self.tokenizer.enable_padding(direction='right',pad_id=pad_id,pad_token=pad,length=text['max_length'])
         with np.load(state_stats,allow_pickle=False) as z:
             self.state_mean=z['mean'].copy();self.state_std=z['std'].copy()
+        self._cached_text=lru_cache(maxsize=32)(self._encode_one)
+
+    def _encode_one(self,task):
+        value=self.tokenizer.encode(task,add_special_tokens=True)
+        ids=np.array([value.ids],dtype=np.int64);mask=np.array([value.attention_mask],dtype=bool)
+        ids.flags.writeable=False;mask.flags.writeable=False
+        return ids,mask
 
     def tokenize(self,tasks):
         tasks=[str(t) if str(t).endswith('\n') else str(t)+'\n' for t in tasks]
+        if len(tasks)==1:return self._cached_text(tasks[0])
         values=self.tokenizer.encode_batch(tasks,add_special_tokens=True)
         return np.array([v.ids for v in values],dtype=np.int64),np.array([v.attention_mask for v in values],dtype=bool)
 

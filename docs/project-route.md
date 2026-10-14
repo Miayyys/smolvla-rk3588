@@ -6957,3 +6957,34 @@ Subsequent local experiment: a hash-pinned private runtime-copy patch to context
 新增`qvla/evaluation/benchmark_local_async.py`，统一入口`evaluate.py local-async`。原模型、原processor及10步flow固定；使用既有隔离开发观测缓存，不重采测试episode、不改权重或量化图。60次完整前向计时后进行30秒、900tick影子异步消费；明确跳过计算延迟对应前缀及首块预填充。没有SO101设备操作，没有用7维LIBERO输出冒充六关节实机指令。未运行官方async/RTC，不声称硬实时或任务成功率。
 
 实测P50=0.153062s、P95=0.158795s，影子循环断粮0次；精确配置、hash、公式及数据见[results.md末节](results.md)。结论支持本机推理供给下一步实机测试，不改变此前量化质量结论。
+
+## 板端运行优化实验分支（2026-10-14）
+
+分支`experiment/rk3588-runtime-optimization`；基线提交`30bb6b2`（已保存此前本机30Hz测量），不更换终版权重、精度或10步Euler计算。板子重启导致原`/dev/shm`部署失效，本次从本地`models/final`和已备份native组件恢复至隔离目录`/dev/shm/qvla_runtime_opt_v1`；未替换系统库。
+
+### 数据路径与缓冲
+
+- 按原表达式预计算10组时间嵌入；action/update缓冲和BF16投影输出预分配，保持原乘法再加法顺序。
+- `RKNNPartitions.bind_static`只在同一动作块内复用不可变的prefix mask和K/V输入准备结果；不把新观测当作旧K/V，不缓存噪声或专家中间输出。
+- RKLLM K/V散射输出缓冲复用；有效token位置变化时清零旧缓冲，避免跨指令残留；tokenizer文本采用32项有界缓存。
+- native RKLLM worker、mask补丁、WC allocation库及BF16 C库均保持原hash；embedding/cache仍通过内存盘交换，未宣称实现零拷贝。
+
+正确性panel取既有开发缓存索引0/4/25，噪声NumPy seed42，执行A→B→C→A；新旧动作数组`[4,1,50,7]`逐位相同，最大差0。这些短运行仅作正确性；有短暂并发，不用其时间作速度结论。
+
+### 最后统一选择调度
+
+加入可选`vision_cores`、`expert_core`及`language_cpu_threads`参数；默认核配置不变。两相机并行使用两个独立RKNN context，避免同一个context并发调用；BF16 native小投影及RKLLM工作池仍沿用原固定核/版本设定。调度能力参考[官方RKNN API头文件](https://github.com/airockchip/rknn-toolkit2/blob/master/rknpu2/examples/librknn_api_android_demo/include/rknn_api.h)，是否可用以本次真实模型数值和重复性结果为准。
+
+短测只预热1次、测量2次，用于排除无效调度：
+
+| 配置 | 短测P50 | 与基线逐位相同 | 处理 |
+| --- | ---: | --- | --- |
+| 单核0 | 7.427s | 是 | 保留默认 |
+| 视觉三核、专家三核 | 6.226s | 否 | 拒绝 |
+| 两相机分核1/2、专家三核 | 5.674s | 否 | 拒绝 |
+| 两相机分核1/2、专家核0 | 5.347s | 是 | 进入最终验证 |
+| 视觉三核、专家核0 | 6.073s | 是 | 可行备选，未做最终资源复测 |
+
+专家三核组合固定输入的两次动作最大差0.4435998797，不能只用耗时选择；隔离结果指向专家核配置，具体内部原因未定位，不声称所有RKNN三核都失效。语言、视觉、专家和每个专家子图的计时只在此阶段用于解释最终瓶颈。
+
+最终验证配置为`config/runtime_optimization_v1.json`：两相机核1/2，专家核0。已完成基线与所选配置各预热3次、测量20次的同输入速度/进程树PSS测试，以及Object0/Goal0两项短闭环回归，没有重跑40任务。P50从7.255s降到5.406s，但PSS从1126.1MiB升至1579.7MiB。20次固定输出与两项完整执行轨迹都逐位一致。保留默认单核，实验配置为可选更快模式；未达到30Hz供给。详细结果、代价和原始数据身份见[results.md](results.md)的本次运行优化节。
