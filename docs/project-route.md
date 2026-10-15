@@ -1,6 +1,6 @@
 # QVLA 项目路线与交付记录
 
-更新：2026-10-03。本文件是项目完整路线的主阅读入口，按实际决策和结果叙述；精确配置、公式、扫描数据来源与失败细节已收录在本文末尾的历史技术记录。跨模型结果统一见[results.md](results.md)，安装运行见[deployment.md](deployment.md)。
+更新：2026-10-15。本文件是项目完整路线的主阅读入口，按实际决策和结果叙述；精确配置、公式、扫描数据来源与失败细节已收录在本文末尾的历史技术记录。跨模型结果统一见[results.md](results.md)，安装运行见[deployment.md](deployment.md)。
 
 ## 1. 目标与评价原则
 
@@ -7226,3 +7226,54 @@ GPU专家总72.464ms中，专家Transformer合计68.418ms、动作/时间嵌入�
 结论：**保留10步积分，通过低分辨率＋专家结构剪枝，可在当前RK3588实现低于1.67秒的真实计算与30Hz模拟队列供给**。不是保持原模型结构/质量的无损加速，不是SO-101六关节控制已实现，也不是全局理论速度极限。效果恢复尚未开始。CPU governor在两轮测速及shadow结束均恢复schedutil。
 
 原始板测json/log、逐候选部署manifest归档于`runs/speed30_tenstep_v1/board/`，计算/供给汇总`summary.json`；运行配置及精度/形状身份见`config/runtime_speed_probe_tenstep.json`。构建产物未加入正式模型发布。
+
+
+<a id="base-rk3588-speed"></a>
+
+## 切换新SmolVLA base的6维板端速度探测（2026-10-15）
+
+用户明确要求使用新下载的`lerobot/smolvla_base`，纠正此前沿用LIBERO 7维板端结构的做法。**从本节开始，后续活动速度实验以新base为来源**；历史LIBERO实验仅保留记录，不能当新模型结果。新checkpoint SHA256 `7cd549ac2351fb069c0ddb3c34ad2d09cfc92b56a15dccdfc2e41467aaca01eb`，修订`5e8d12a6e2975b0e5e5fce7c8caf47c371d257b6`。本轮仍按用户要求快速验证速度、保留10步Euler、忽略任务效果。
+
+### 来源与构建
+
+新增`qvla/conversion/export_base_speed_assets.py`从新base严格加载完整权重后导出单相机GPU边界、完整专家ONNX、CPU参数与独立语言HF容器。新的视觉导出显式指定--model-dir artifacts/smolvla_base；新专家剪层显式指定--source-onnx为新导出图、--boundary为新base边界。没有复用旧V1/LIBERO的视觉、语言、专家或CPU学习权重。只复用相同SmolVLM2引用的tokenizer/config资源及现有运行代码、官方/已修复native库。
+
+- 新专家源ONNX SHA256 `a69fccca00222021df222c7a1e219a5291a2c24889dc42b9db05d169a8ae97be`。
+- 新语言HF权重 SHA256 `5ce8c779c4c61fc1961f4339e081051d6cf7e9912ceb902eb7e4dadfc5786b67`，全部16层从base抽取；Llama容器head15/KVhead5/head_dim64、RoPE10000，对应SmolVLA实际apply_rope。RKLLM1.3.1重新校准并W8A8转换，1核、optimization1、prepend160 shapes，max_context256，export_embedding=False。
+- CPU词嵌入重新从base逐行量化为INT8，state_proj使用base浮点权重；CPU归档SHA256 `9e8ff6d076751ba769e72406efcbc285898e9f25ebea1b9ab4c9bb8f6c8486b6`，动作输出维度6。
+- 视觉128/256采用新base的vision+connector重新导出与默认W8A8转换。为接口兼容，connector的4/16个低分辨率token仍nearest扩展为64；**没有复制第二视图**。专家完整16层，以及保留前8/4层的速度候选，FFN均原2048宽度、隐藏维720。没有做QAT、剪枝恢复或新的HAQ搜索，不能迁移旧V1 QAT/HAQ质量结论。
+
+本轮不是原始FP模型无改动的板端性能，包含量化、分辨率与部分候选结构变化。低分辨率特征扩展也不等于官方低分辨率原生token路径的数值等价。
+
+### 真正单相机及归一化边界
+
+新GPU捕获与专家图prefix为113（64视觉＋48语言槽位＋1状态），区别于旧双视图图177。本条指令的有效token数77，RKLLM worker仍执行固定160-token图，并将有效K/V散射至113长度；只将本轮实测77加入白名单。`speed_ceiling.py --native-single-camera`让预处理结果只包含一个图像/掩码，视觉每轮实际调用1次，不沿用旧--single-camera的第二视图特征复制。CPU预处理内部暂仍创建第二个归一化图后丢弃，尚有小额可优化开销。
+
+发现base的两个normalizer文件是旧多域键`so100*.buffer.action.mean/std`，没有统一`action.mean/std`或`observation.state.mean/std`。当前LeRobot0.6.1加载这些文件时，标准action/state键无匹配，不应用对应旧域统计。导出初次按canonical键读取报KeyError，已修正：**本轮明确使用6维均值0、标准差1作为速度探针**，匹配当前本机加载的缺失canonical统计行为，不借用LIBERO统计、不擅选某套SO100统计。原文件保留在artifacts/smolvla_base，部署记录normalization_note.json。不能将此视为SO-101物理标定、关节单位或任务适配完成。
+
+### 本地环境修复与板端准备
+
+RKLLM隔离venv未自带torch，首次编译因ModuleNotFoundError失败；通过bootstrap将已有.venv-haq-local/site-packages追加至sys.path复用torch/Transformers，不下载新包，重试成功。其他视觉/专家并行编译成功。board.py首次使用hashlib.file_digest遇板端旧Python版本不支持，改为流式SHA256后重试成功；失败未产生可用速度数据。
+
+将代码、全新模型产物、CPU资源及native组件独立放至`/dev/shm/qvla_base_speed_v1`。旧两个临时测速目录的本地模型/报告已保存，清理其板端内存盘副本腾空间；models/final正式发布没有覆盖。所有模型、输入和配置hash保存在原始构建/部署记录，来源及输出10项核对通过`runs/base_rk3588_speed_v1/provenance_check.json`。
+
+### 板端速度（全部10步积分，50×6输出）
+
+RK3588/runtime2.3.2、RKLLM1.3.1patched，CPU3/4/5/6 performance、视觉三核、专家核0、语言CPU3线程，NPU读数1GHz。每组预热1次、测5次；包含前后处理/真实视觉/语言/10次专家，不含初始化、相机、网络、电机。固定新base的合成单图/state/task/noise，不用旧LIBERO输入。全部输出[1,50,6]、finite，调用计数均1视觉＋1语言＋10专家。
+
+| 候选 | 图像尺寸 | 专家层数 | 10步P50 ms | 最短 ms | 最大 ms |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `base_v256_depth16` | 256 | 16 | 1473.137 | 1417.024 | 1533.600 |
+| `base_v128_depth16` | 128 | 16 | 1379.706 | 1378.398 | 1410.289 |
+| `base_v256_depth8` | 256 | 8 | 936.006 | 858.321 | 996.263 |
+| `base_v128_depth8` | 128 | 8 | 896.281 | 874.231 | 903.668 |
+| `base_v128_depth4` | 128 | 4 | 627.636 | 626.232 | 629.195 |
+
+### 30Hz供给短测（未接真实机械臂）
+
+- 256尺寸完整16层专家：10秒、300个tick、6次后台推理，断供0，错误0；推理P50 1526.067ms、最大1533.144ms；tick迟到P95 0.265ms、最大0.949ms，迟到超过33.333ms为0。
+- 128尺寸4层专家：10秒、300个tick、6次后台推理，断供0，错误0；推理P50 615.500ms、最大797.251ms；tick迟到P95 0.073ms、最大0.331ms，迟到超过33.333ms为0。
+
+初始50动作在计时前准备，队列容量50；每块均重新执行完整推理，固定离线观测/noise，未采真实相机、未写电机、未执行过期动作替换或连续性处理。因此可称**新6维base量化/低分辨率探针具备短时30Hz动作供给能力**，不能称已完成SO-101实际控制或任务效果达标，也不能称所有指令/长期运行已验证。完整16层256配置保留网络深度，但仍改动视觉分辨率、量化和归一化；4层仅极速探索。
+
+新源权重/输入/图/资产/每次测量在`runs/base_rk3588_speed_v1/`，板测与逐候选manifest在board/，汇总summary.json。快速配置`config/runtime_base_speed_probe.json`，其中conservative_probe指完整16层256、fastest_probe指4层128，均非质量验证后的正式发布。CPU governor在测速及两轮shadow结束恢复schedutil。

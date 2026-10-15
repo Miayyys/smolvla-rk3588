@@ -36,6 +36,7 @@ def main():
     p.add_argument('--fast-checks', action='store_true')
     p.add_argument('--expert-layers', type=int, help='Input adapter for a structurally shortened monolithic expert')
     p.add_argument('--image-size', type=int, help='Experimental preprocessor size; must match compiled graph')
+    p.add_argument('--native-single-camera', action='store_true', help='Omit second view entirely; requires matching single-view language/expert graphs')
     p.add_argument('--single-camera', action='store_true', help='Run vision once, duplicate features; keep fixed two-view prefix graph')
     a = p.parse_args()
     from qvla.runtime.smolvla_board_runtime import BoardSmolVLA
@@ -76,6 +77,18 @@ def main():
             def release(self):
                 self.inner.release()
         model.models[2] = SelectedKV(model.models[2], a.expert_layers)
+    if a.native_single_camera:
+        if a.single_camera or model.vision_executor:
+            raise ValueError('Native single view requires one context and no duplication')
+        class SinglePreprocessor:
+            def __init__(self, inner):
+                self.inner = inner
+            def __call__(self, *args, **kwargs):
+                x = self.inner(*args, **kwargs)
+                x['images'] = x['images'][:1]
+                x['image_masks'] = x['image_masks'][:1]
+                return x
+        model.pre = SinglePreprocessor(model.pre)
     if a.single_camera:
         if model.vision_executor:
             raise ValueError('Single-camera probe requires one vision context')
@@ -92,7 +105,7 @@ def main():
             def release(self):
                 self.wrapped.release()
         model.models[0] = ReuseSecondView(model.models[0])
-    report = {'structural_expert_layers': a.expert_layers, 'experimental_image_size': a.image_size, 'single_camera_duplicate_feature_probe': a.single_camera, 'options': model.options, 'hashes': model.hashes,
+    report = {'native_single_camera': a.native_single_camera, 'structural_expert_layers': a.expert_layers, 'experimental_image_size': a.image_size, 'single_camera_duplicate_feature_probe': a.single_camera, 'options': model.options, 'hashes': model.hashes,
               'quality_validated': False, 'partition_finite_checks_disabled': a.fast_checks,
               'input_sha256': hashlib.sha256(a.inputs.read_bytes()).hexdigest(), 'cases': []}
     try:
@@ -107,7 +120,7 @@ def main():
                 begin = time.perf_counter()
                 y, t = model.predict(raw)
                 wall_ms = (time.perf_counter() - begin) * 1000
-                if a.single_camera:
+                if a.single_camera or a.native_single_camera:
                     t['calls']['vision'] = 1
                 samples.append({**t, 'wall_ms': wall_ms, 'finite': bool(np.isfinite(y).all()),
                                 'shape': list(y.shape), 'output_sha256': hashlib.sha256(y.tobytes()).hexdigest()})

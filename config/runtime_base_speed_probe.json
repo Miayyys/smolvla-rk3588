@@ -1,0 +1,46 @@
+{
+  "scope": "NEW smolvla_base board speed probe; not task calibrated or quality validated",
+  "source_model": "lerobot/smolvla_base",
+  "source_revision": "5e8d12a6e2975b0e5e5fce7c8caf47c371d257b6",
+  "checkpoint_sha256": "7cd549ac2351fb069c0ddb3c34ad2d09cfc92b56a15dccdfc2e41467aaca01eb",
+  "native_single_camera": true,
+  "output_action_dim": 6,
+  "chunk_size": 50,
+  "num_steps": 10,
+  "prefix_tokens": 113,
+  "rkllm_fixed_tokens": 160,
+  "validated_instruction_tokens": [
+    77
+  ],
+  "visual_token_resampling": "coarse low-resolution connector features nearest resampled to 64 tokens for existing language ABI; no duplicated second view",
+  "precision": "RKNN eligible W8A8 kernels; RKLLM W8A8; new-base-derived row INT8 embedding; original state projection float",
+  "normalization": "explicit identity for speed-only, missing canonical stats in base legacy files; not robot calibration",
+  "conservative_probe": {
+    "candidate": "base_v256_depth16",
+    "image_size": 256,
+    "expert_layers": 16,
+    "root": "/dev/shm/qvla_base_speed_v1/base_v256_depth16"
+  },
+  "fastest_probe": {
+    "candidate": "base_v128_depth4",
+    "image_size": 128,
+    "expert_layers": 4,
+    "root": "/dev/shm/qvla_base_speed_v1/base_v128_depth4"
+  },
+  "runtime_options": {
+    "vision_cores": [
+      "all"
+    ],
+    "expert_core": "0",
+    "language_cpu_threads": 3
+  },
+  "cpu_affinity": [
+    3,
+    4,
+    5,
+    6
+  ],
+  "benchmark_governor": "performance",
+  "report": "runs/base_rk3588_speed_v1/summary.json",
+  "quality_validated": false
+}

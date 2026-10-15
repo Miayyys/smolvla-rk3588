@@ -25,7 +25,7 @@ def export_vision(a):
     from qvla.conversion.export_smolvla_vision_onnx import VisionAndConnector
     root = Path.cwd()
     torch.set_num_threads(4)
-    args = SimpleNamespace(model_dir=root/'artifacts/transfer/model',
+    args = SimpleNamespace(model_dir=a.model_dir.resolve(),
                            vlm_assets_dir=root/'artifacts/transfer/smolvlm2_assets', device='cpu')
     policy, _, _ = load_policy(args)
     policy.model.vlm_with_expert.vlm.set_attn_implementation('eager')
@@ -54,7 +54,7 @@ def export_vision(a):
     for size in a.sizes:
         folder = a.output / f'vision_{size}'
         folder.mkdir(parents=True, exist_ok=True)
-        pixel = np.load(root/'runs/smolvla_vision_split_v1/vision_input_0.npy')
+        pixel = np.load(a.pixel_source)
         pixel = torch.nn.functional.interpolate(torch.from_numpy(pixel), size=(size, size), mode='bilinear', align_corners=False)
         with torch.inference_mode():
             y = wrapper(pixel)
@@ -71,7 +71,7 @@ def export_vision(a):
 def prune_expert(a):
     import onnx
     import numpy as np
-    source = Path('runs/smolvla_expert_step_split_v2/expert_step.onnx')
+    source = a.source_onnx
     for width in a.widths:
         m = onnx.load(str(source))
         tensors = {x.name:x for x in m.graph.initializer}
@@ -98,7 +98,7 @@ def prune_expert(a):
         folder.mkdir(parents=True, exist_ok=True)
         onnx.save(m, str(folder/'model.onnx'))
         names=[x.name for x in m.graph.input]
-        with np.load('runs/smolvla_expert_step_split_v2/expert_boundary.npz') as z:
+        with np.load(a.boundary) as z:
             for name in names:np.save(folder/(name+'.npy'), z[name])
         (folder/'dataset.txt').write_text(' '.join(str((folder/(n+'.npy')).resolve()) for n in names)+'\n')
         (folder/'export.json').write_text(json.dumps({'source_onnx_sha256':digest(source),
@@ -112,7 +112,7 @@ def prune_depth(a):
     import onnx
     from onnx.utils import Extractor
     import numpy as np
-    source = Path('runs/smolvla_expert_step_split_v2/expert_step.onnx')
+    source = a.source_onnx
     for depth in a.depths:
         m = onnx.load(str(source))
         down = next(n for n in m.graph.node if n.name == f'/mlp/down_proj_{depth-1}/MatMul')
@@ -130,7 +130,7 @@ def prune_depth(a):
         folder = a.output / f'expert_depth{depth}'
         folder.mkdir(parents=True, exist_ok=True)
         onnx.save(m, str(folder/'model.onnx'))
-        with np.load('runs/smolvla_expert_step_split_v2/expert_boundary.npz') as z:
+        with np.load(a.boundary) as z:
             for name in names:np.save(folder/(name+'.npy'), z[name])
         (folder/'dataset.txt').write_text(' '.join(str((folder/(n+'.npy')).resolve()) for n in names)+'\n')
         (folder/'export.json').write_text(json.dumps({'source_onnx_sha256':digest(source),
@@ -171,8 +171,13 @@ def main():
     sub=p.add_subparsers(dest='mode',required=True)
     v=sub.add_parser('vision');v.add_argument('--sizes',type=int,nargs='+',default=[256,128]);v.add_argument('--onnx-site-packages',type=Path)
     v.add_argument('--output',type=Path,required=True)
+    v.add_argument('--model-dir',type=Path,default=Path('artifacts/transfer/model'))
+    v.add_argument('--pixel-source',type=Path,default=Path('runs/smolvla_vision_split_v1/vision_input_0.npy'))
     e=sub.add_parser('expert');e.add_argument('--widths',type=int,nargs='+',default=[1024,512]);e.add_argument('--output',type=Path,required=True)
     d=sub.add_parser('depth');d.add_argument('--depths',type=int,nargs='+',default=[8,4]);d.add_argument('--output',type=Path,required=True)
+    for parser in (e,d):
+        parser.add_argument('--source-onnx',type=Path,default=Path('runs/smolvla_expert_step_split_v2/expert_step.onnx'))
+        parser.add_argument('--boundary',type=Path,default=Path('runs/smolvla_expert_step_split_v2/expert_boundary.npz'))
     c=sub.add_parser('compile');c.add_argument('--folder',type=Path,required=True)
     a=p.parse_args()
     if a.mode=='vision':export_vision(a)
