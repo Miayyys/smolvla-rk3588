@@ -1,0 +1,43 @@
+{
+  "scope": "speed-only diagnostic, quality unvalidated; not default release and not SO101 deployment",
+  "model_family": "LIBERO board pipeline with original FP-source vision/expert and selected V1 RKLLM/CPU assets",
+  "num_steps": 10,
+  "chunk_size": 50,
+  "output_action_dim": 7,
+  "single_camera_feature_duplication": true,
+  "image_size": 128,
+  "native_visual_tokens": 4,
+  "connector_output_resampling": "2x2 nearest expanded to 8x8, repeated for legacy second view",
+  "expert_layers_before": 16,
+  "expert_layers_after": 4,
+  "expert_layer_indices": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "expert_ffn_width": 2048,
+  "precision": "RKNN default eligible W8A8 kernels plus selected RKLLM W8A8; CPU glue floating point",
+  "runtime_options": {
+    "vision_cores": [
+      "all"
+    ],
+    "expert_core": "0",
+    "language_cpu_threads": 3
+  },
+  "benchmark_cpu_affinity": [
+    3,
+    4,
+    5,
+    6
+  ],
+  "benchmark_cpu_governor": "performance",
+  "npu_frequency_hz_observed": 1000000000,
+  "candidate_root": "/dev/shm/qvla_speed30_tenstep_v1/v128_depth4",
+  "graph_hashes": {
+    "vision_128.rknn": "419dea084600b26c34679e9d7ebbaf68a465b211fca7c4471dd942e3e2f430da",
+    "expert_depth4.rknn": "9aef58c96e5ecbf287e332ac3ce63d18bbf21d07852b2879d1176b2cc3be1532"
+  },
+  "source_compile_reports": "runs/speed30_tenstep_v1/artifacts.json",
+  "shadow_report": "runs/speed30_tenstep_v1/board/shadow_depth30.json"
+}

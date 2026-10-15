@@ -7021,3 +7021,208 @@ Subsequent local experiment: a hash-pinned private runtime-copy patch to context
 - fixture、输入输出、C与Python报告、提交跟踪和perf原始数据位于`runs/expert_multicore_diagnostic_v1/board/expert_diagnostic/`；汇总、source hash及排除项在`runs/expert_multicore_diagnostic_v1/summary.json`。无效对照保留并明确标记，不计入有效结果。
 
 诊断结束后，恢复“视觉核1/2独立并行＋专家核0”完整回放2次，与旧基准逐位一致，最大差0。保持已有5.406秒配置，不启用有偏差的专家协同多核。质量、性能数字不因本次诊断重写，见[results.md](results.md)。
+
+## 速度上限探索及单相机代理测速（2026-10-14）
+
+按用户要求暂不约束正确性；本轮是有限配置快速测速，不能称绝对硬件极限。与正式模型隔离，未覆盖模型文件或替换系统库。所有实验仍生成50步、7维LIBERO动作，不能直接控制SO-ARM101。
+
+实验入口`python3 -m qvla.evaluation.speed_ceiling`，参数`--root ... --inputs ... --output ... --options ... --steps 10,1 --repeats 3 --fast-checks --single-camera`；去掉`--single-camera`即双视图。`--fast-checks`只关闭分区输出有限值扫描和逐分区计时，保留SDK失败检查，最终输出另记finite。
+
+加速组合包括两相机独立上下文、单图三核、专家协同多核、语言CPU线程1/3、INT8视觉、旧单体专家图、10/5/3/1次Euler。旧INT8视觉/单体专家是不同转换产物，不能当作终版同精度的纯调度优化；专家多核已知有数值偏差，本轮仍纳入测速。CPU performance模式绑定进程至核3/4/5/6，子进程继承后语言worker按自身逻辑绑定；policy0最高1.8GHz，policy3/5最高2.256GHz，NPU读数1GHz，无超频。两轮performance结束均恢复原schedutil，原始记录见environment文件。
+
+**单相机实现边界**：每次predict只做一次新图像视觉推理，把该特征复用至原第二视图位置；语言仍运行固定双视图长度，预处理仍保留原两视图路径。没有跨predict缓存视觉/KV，没有缩短语言图；因此这是减少一次视觉调用的代理测速，尚未完成单相机训练/掩码/图导出，也未接真实摄像头。SDK调用数已修正为1次视觉＋1次语言＋步数×3次专家分区。
+
+初筛每组每步数预热1次、测2次；performance双相机预热1次、测5次，单相机预热1次、测3次。计时perf_counter，包含预处理、真实视觉/语言/专家执行与后处理，不含初始化、SSH、相机采集、通讯和机械臂执行。输入为同一离线样本，SHA 86f2c986b14035ebe1adbaefa0cb9416bb9ee7f9c7f29dd16c59b8d23f863c71。原始json/log和编排脚本保存在`runs/speed_ceiling_v1/`（Git忽略）。以下全部为实测P50：
+
+| 配置 | 迭代次数 | 次数 | P50 ms | 最短 ms |
+| --- | ---: | ---: | ---: | ---: |
+| `fp16_all` | 10 | 2 | 5885.920 | 5825.132 |
+| `fp16_all` | 1 | 2 | 3403.948 | 3401.662 |
+| `fp16_dual` | 10 | 2 | 5246.949 | 5020.843 |
+| `fp16_dual` | 5 | 2 | 4119.359 | 3797.803 |
+| `fp16_dual` | 3 | 2 | 3525.440 | 3438.908 |
+| `fp16_dual` | 1 | 2 | 3047.014 | 2788.644 |
+| `fp16_dual_expertall` | 10 | 2 | 5504.825 | 5268.617 |
+| `fp16_dual_expertall` | 1 | 2 | 3358.824 | 2727.314 |
+| `fp16_performance_threads1` | 10 | 5 | 3913.570 | 3838.240 |
+| `fp16_performance_threads1` | 1 | 5 | 2643.315 | 2595.101 |
+| `fp16_performance_threads3` | 10 | 5 | 3737.458 | 3682.698 |
+| `fp16_performance_threads3` | 1 | 5 | 2471.771 | 2451.583 |
+| `fp16_single_camera_core0` | 10 | 3 | 3755.353 | 3651.437 |
+| `fp16_single_camera_core0` | 1 | 3 | 2416.814 | 2358.517 |
+| `fp16_single_camera_coreall` | 10 | 3 | 3065.591 | 2890.413 |
+| `fp16_single_camera_coreall` | 1 | 3 | 1716.390 | 1710.510 |
+| `int8_all` | 10 | 2 | 5505.050 | 5464.569 |
+| `int8_all` | 1 | 2 | 2924.397 | 2919.000 |
+| `int8_doubleall` | 10 | 2 | 5722.894 | 5524.612 |
+| `int8_doubleall` | 1 | 2 | 2849.368 | 2813.625 |
+| `int8_dual` | 10 | 2 | 4727.345 | 4713.945 |
+| `int8_dual` | 5 | 2 | 3284.220 | 3199.458 |
+| `int8_dual` | 3 | 2 | 2737.702 | 2624.796 |
+| `int8_dual` | 1 | 2 | 2053.723 | 2047.440 |
+| `int8_fused` | 10 | 2 | 4076.367 | 4027.998 |
+| `int8_fused` | 5 | 2 | 3077.591 | 2903.996 |
+| `int8_fused` | 3 | 2 | 2567.510 | 2547.699 |
+| `int8_fused` | 1 | 2 | 2044.797 | 2012.761 |
+| `int8_fused_performance_threads1` | 10 | 5 | 3214.888 | 3150.109 |
+| `int8_fused_performance_threads1` | 1 | 5 | 1952.108 | 1919.296 |
+| `int8_fused_performance_threads3` | 10 | 5 | 3091.000 | 3082.868 |
+| `int8_fused_performance_threads3` | 1 | 5 | 1827.332 | 1773.263 |
+| `int8_performance_threads1` | 10 | 5 | 3245.436 | 3121.788 |
+| `int8_performance_threads1` | 1 | 5 | 1937.753 | 1897.458 |
+| `int8_performance_threads3` | 10 | 5 | 3154.382 | 3092.434 |
+| `int8_performance_threads3` | 1 | 5 | 1783.412 | 1767.753 |
+| `int8_single_camera_core0` | 10 | 3 | 3141.726 | 3141.589 |
+| `int8_single_camera_core0` | 1 | 3 | 1823.283 | 1818.904 |
+| `int8_single_camera_coreall` | 10 | 3 | 2912.834 | 2860.593 |
+| `int8_single_camera_coreall` | 1 | 3 | 1552.249 | 1545.470 |
+
+单相机四组结果共24次实测，输出形状均`[1,50,7]`且finite；不代表动作正确或任务成功。最快单相机INT8视觉三核＋专家核0＋语言3线程＋performance＋1次Euler：P50 1552.249ms，最短1545.470ms，即约32.21个动作/秒；相对30Hz的1666.667ms块预算仅余114.418ms，且未含外部控制链路，不能宣称机械臂稳定30Hz。
+
+保持10次Euler时，最快单相机INT8代理P50 2912.834ms，仍未达到该预算；FP16单相机三核P50 3065.591ms。双相机最快10次方案（INT8视觉＋旧单体专家＋performance）P50约3091ms。现终版权重/图不变的双相机performance组P50约3737ms，但本轮未做任务/逐位回归，不替换之前已验证配置。
+
+下一步应按这些速度档评估质量，再决定是否采用INT8视觉、少步flow或单相机重新适配。SO-101官方`lerobot/smolvla_base`配置为6维状态/动作，当前LIBERO模型为7维末端动作，切换需重新适配/转换，不能删一维解决。
+
+## SmolVLA base 本机加载与推理验证（2026-10-15）
+
+官方`lerobot/smolvla_base`修订`5e8d12a6e2975b0e5e5fce7c8caf47c371d257b6`，权重SHA256 `7cd549ac2351fb069c0ddb3c34ad2d09cfc92b56a15dccdfc2e41467aaca01eb`，906,712,520字节；使用现有LeRobot0.6.1/torch2.7.1+cu118环境，在RTX4060 Laptop GPU运行，未量化、未微调、未autocast/compile。参数保留FP32/BF16混合（225/275个参数张量）。复用已缓存SmolVLM2配置/tokenizer，并严格加载完整base权重，禁用远程访问，没有额外下载VLM权重。
+
+输入为seed43生成的三路随机RGB图像（每路3×256×256、float32 [0,1]）、6维零状态、指令`Pick up the cube and place it in the box.`及固定1×50×32噪声；经checkpoint自带前后处理，执行10次Euler，输出1×50×6。输入归档SHA256 `cae2570c287839808856c6624f727abfde903f49b9b20237385c0ddc5ef7fac3`。这不是真实场景数据或真实控制，不能评价抓取成功率。
+
+模型加载15.495秒；预热1次（0.603秒），测量3次完整预处理＋推理＋后处理（CUDA同步，不含加载）：0.183766, 0.189130, 0.187022秒，P50 0.187022秒。输出全部有限，同输入重复最大绝对差0；PyTorch峰值allocated 1268435456字节（约1.181GiB），reserved 1314914304字节，不等于整进程/驱动显存。三次短测不能作为稳定30Hz控制的正式证明，未测相机采集、总线、机械臂运动或任务质量。
+
+可复现入口`PYTHONPATH=. .venv-haq-local/bin/python runs/smolvla_base_smoke_v1/run.py`；脚本、输入、输出、日志和报告在`runs/smolvla_base_smoke_v1/`（Git忽略）。学习用源码目录`/home/loser/Study/lerobot`没有被修改，本次使用项目已安装0.6.1包。
+
+## SmolVLA base 真正单视图GPU测速（2026-10-15）
+
+在RTX4060 Laptop GPU/torch2.7.1+cu118/LeRobot0.6.1，保持官方base原权重（SHA256 `7cd549ac2351fb069c0ddb3c34ad2d09cfc92b56a15dccdfc2e41467aaca01eb`）、10次Euler、50步×6维输出、原FP32/BF16参数及既有前后处理，无autocast/compile。固定上一轮模拟输入/噪声，输入归档SHA256 `cae2570c287839808856c6624f727abfde903f49b9b20237385c0ddc5ef7fac3`；单视图仅提供camera1，`empty_cameras=0`，官方prepare_images跳过缺失键，不创建空视图、不复制特征。通过embed_image调用计数，确认单视图每次恰为1次视觉调用，三视图恰为3次；语言及专家随实际prefix长度运行。这与板端固定双视图图的单相机特征复制代理不同，不能直接套用GPU速度到板端。
+
+同进程先1路再3路，各预热5次、测60次，CUDA同步计时完整预处理＋推理＋后处理（含CPU输出回传），不含加载/图像采集/电机通信。1路P50 0.123482483s，P95 0.127477140s，最快0.120802923s；3路P50 0.199991572s，P95 0.202698221s。单视图较本轮三视图P50减少38.26%。原三次smoke的0.187s和此次60次0.200s存在桌面GPU运行环境/统计差异，不是模型改动。
+
+两组输出均[1,50,6]、全部finite、固定输入重复最大差0；PyTorch峰值allocated单视图1260078592B，三视图1268435456B。这只验证运行/短时延迟；单视图动作与三视图动作不要求一致，未评测任务质量、真实场景或控制供给。原始脚本/日志/报告/动作保存在`runs/smolvla_base_camera_benchmark_v1/`（Git忽略），复现`PYTHONPATH=. .venv-haq-local/bin/python runs/smolvla_base_camera_benchmark_v1/run.py`。未修改权重、官方源码或正式板端配置。
+
+## INT8优先完整专家的速度探测（2026-10-15）
+
+用户要求忽略质量，继续探测板端最低可用精度速度。沿用现有RK3588 LIBERO部署结构（并非刚下载的SO-101 base模型），视觉使用旧V1 INT8图，语言仍选定RKLLM W8A8及固定160-token runtime。旧混合专家有人工精度例外，本轮新增完整单体专家，默认W8A8 channel/normal量化、FP16默认浮点类型、optimization_level3，无hybrid人工例外。当前Toolkit2/RKLLM版本的RK3588 INT4路径此前未通过，不将INT4纳入可运行速度结果。
+
+本地没有所选无教师V1 master/完整ONNX，**新增专家来自本地原始FP导出图**，不能声称仅改终版精度的严格消融，也不等于新base模型转换成功。源ONNX SHA256 `73679efcc44854bb26698bd13dea94cb8eb8c27600bc51df51956c4804a29eca`，数据采用现有一个真实expert_boundary样本，35个输入，KV宽度177。单样本仅用于快速转换，不是正式质量校准；模型初始权重未训练，未做任务评测。转换耗时24.368s，新专家115,436,207B，SHA256 `c68254f9c56f304ed0b22abe69ef76e89bf2ecc3a41b97acea914f22ff0581df`。脚本/输入/SDK日志在`runs/lowest_precision_speed_v1/compile.py`及同目录。
+
+板端隔离目录`/dev/shm/qvla_lowest_speed_v1`，重启后重新传入模型及native组件；没有替换系统库或覆盖终版。CPU绑定3/4/5/6，performance模式，NPU频率读数1GHz，语言CPU3线程。单相机仍是一次新视觉调用、特征复用到第二视图位置的代理，固定双视图语言图与两图预处理保留，没有跨块缓存或跳过语言/专家。每块50步×7维动作，1/3/10次Euler，各预热1次、测5次，包含完整前后处理、不含加载/网络/相机采集/真实控制。
+
+同轮实测：
+
+| 配置 | Euler次数 | P50 ms | 最短 ms |
+| --- | ---: | ---: | ---: |
+| `int8_vision_single` | 1 | 1811.293 | 1716.854 |
+| `int8_vision_single` | 3 | 2102.593 | 2098.898 |
+| `int8_vision_single` | 10 | 3071.648 | 3009.590 |
+| `int8_three_core` | 1 | 1540.024 | 1528.554 |
+| `int8_three_core` | 3 | 1798.298 | 1787.730 |
+| `int8_three_core` | 10 | 2830.632 | 2759.598 |
+| `int8_single_core` | 1 | 1531.291 | 1526.910 |
+| `int8_single_core` | 3 | 1837.550 | 1795.897 |
+| `int8_single_core` | 10 | 2802.478 | 2746.246 |
+| `mixed_control` | 1 | 1559.165 | 1549.480 |
+| `mixed_control` | 3 | 1804.687 | 1769.051 |
+| `mixed_control` | 10 | 2861.838 | 2755.406 |
+
+最快为INT8优先专家核0＋视觉三核：1次Euler P50 1531.291ms、最短1526.910ms，对同轮混合专家1559.165ms仅降低约1.79%，短样本/顺序运行及权重来源不同，不能证明统计显著的纯精度收益。10次Euler P50 2802.478ms。专家三核1次1540.024ms没有明显优于单核。
+
+最快组阶段P50：预处理74.656ms，视觉1077.672ms，语言247.625ms，专家129.186ms，glue0.895ms；阶段各自中位数不要求严格相加等于整体中位数。视觉约占整体70.4%，专家降位宽带来的整策略收益空间有限。50动作/1.531s约32.65动作每秒，1666.667ms块预算余约135ms，但仅为代理速度，无质量和真实链路验证，不能称实现30Hz机械臂控制或已证明理论极限。
+
+精度审计单独在测速结束后用标准C API、INIT_FLAG_COLLECT_PERF_MASK=8执行两次，新专家SDK算子性能表显示609个NPU节点均标注INT8，包括116个Conv/融合Conv；exMatMul、exNorm、exSoftmax13也标注INT8，未见专家NPU FP16/BF16保护区域。位置/索引等CPU节点仍有INT64，CPU Cos/Sin及输入输出转换仍存在；表中DataType是SDK所报算子格式，不证明内部每条指令均INT8，也没有重新审计整套视觉/语言算子。因此称“INT8优先、可量化核全部默认量化”，不称整策略纯INT8。
+
+审计`native_report.json`中的all_outputs_exact=false来自占位零参考，仅用于取得perf信息，**不是质量结果**；两次固定输入输出重复最大差0。四组完整推理均正常返回有限值，未做闭环成功率。原始板测报告/日志、算子表保存在`runs/lowest_precision_speed_v1/board/`，汇总`summary.json`。CPU governor在测速结束已恢复schedutil。
+
+## 默认10步推理的瓶颈复核（2026-10-15）
+
+用户要求先看原模型耗时，停止将1步极限配置的比例套用至默认10步。区分三种执行环境，**不同相机数/后端/模型权重的绝对延迟不可作为纯量化加速比**。
+
+1. 历史原始LIBERO FP16板端完整回放：双相机、全RKNN单核0、10步Euler、预热1次测3次。源`runs/qat_v1_rknn_deploy_v1/fp16_baseline_20261002.json`，SHA256 `8b81ed7d304421d0c406c80b6937684f6d2629db516f212690739820603ea3de`。整体P50 8047.187ms，双图视觉3851.728ms（约47.9%），专家10步合计3452.235ms（约42.9%），语言614.029ms，预处理150.143ms。为2026-10-02的原始逐段记录重分析，不是今天重跑，也不拼接到后来7.520s整轮资源基准。
+2. 2026-10-15同轮混合专家板端对照：INT8视觉＋RKLLM语言＋原混合专家，单相机特征复用代理，performance/视觉三核/专家核0；10步Euler预热1次测5次。源`runs/lowest_precision_speed_v1/board/mixed_control.json`。整体P50 2861.838ms，视觉1090.334ms（约38.1%），语言234.537ms，专家10步1436.328ms（约50.2%），预处理77.585ms。因此该默认10步配置的首要耗时是专家；之前视觉70%只针对1步Euler。
+3. 新下载官方base原始权重本机GPU细分：RTX4060 Laptop，LeRobot0.6.1/torch2.7.1+cu118，原FP32/BF16、单视图，默认10步、50×6动作；固定已有模拟输入/噪声，未训练/未编译/未autocast。模块函数用CUDA event成对打点，最终CUDA synchronize读取时间，5次预热、20次测量，每次核对1次视觉和10次专家。整体wall P50 116.318ms；这是带打点的独立轮次，桌面负载/频率与之前123ms测试可不同，不当作优化收益。CUDA event为设备时间轴区间，可能包括host发射空隙，不等于所有kernel纯执行时间；嵌套阶段不可重复相加。
+
+| GPU阶段（含嵌套） | P50 ms |
+| --- | ---: |
+| `external_preprocessor` | 0.370 |
+| `image_preparation` | 0.086 |
+| `vision_encoder` | 32.800 |
+| `connector` | 0.325 |
+| `vision_connector_inclusive` | 33.162 |
+| `prefix_embedding_including_vision` | 33.361 |
+| `language_prefix_transformer` | 7.769 |
+| `action_time_embedding` | 2.229 |
+| `expert_transformer` | 68.418 |
+| `expert_steps_inclusive` | 72.464 |
+| `external_postprocessor` | 0.056 |
+
+GPU专家总72.464ms中，专家Transformer合计68.418ms、动作/时间嵌入合计2.229ms；视觉编码32.800ms、连接器0.325ms；语言prefix Transformer7.769ms。侧重默认10步时应先拆专家Attention/MLP及各轮调用开销，再看视觉计算/执行方式；不能仅依据减至1步时的视觉占比决定优化重点。
+
+原始脚本、20次逐段数据在`runs/smolvla_base_profile_v1/`，联合分析`comparison.json`。未对库源码/权重/板端配置做持久修改，没有新任务成功率结论；未测出的板端内部单算子耗时仍未知。
+
+## 后续加速路线与稀疏入口复核（2026-10-15，方案尚未板测）
+
+当前讨论对象是既有板端混合精度方案，不是新base已完成板端转换。默认10步的专家/视觉约50%/38%，语言约8%；1步时视觉约70%。只减少语言段、假设其他阶段完全不变，则整体延迟最多减少约8%，不能将语言43%文件占比当成延迟收益。
+
+### 已验证：当前SDK稀疏推理入口
+
+本机esp-ml的RKNN-Toolkit2 2.3.2独立执行config(target_platform='rk3588',quantized_dtype='w8a8',sparse_infer=...)。False返回0；True抛出ValueError：`rk3588 does not support sparse inference, ignore this parameter!`。没有执行模型剪枝、没有板测速度收益；此结论只限定当前SDK公开稀疏入口，不证明硬件所有底层稀疏机制绝对不可能。原始探针日志和报告`runs/sparsity_feasibility_v1/`。非结构化置零仍可能走同形状稠密计算，不能把零权重比例当作加速比。结构化删除层/通道后重新导出更小的稠密图是另一路径，尚未验证质量或板端收益。
+
+### 优先探索（全部未测量，不能当已实现结果）
+
+| 顺序 | 操作 | 预计影响及需要验证的条件 |
+| --- | --- | --- |
+| 1 | 视觉逐算子profile，区分Conv/MatMul、Softmax/Norm、Transpose与CPU回退 | 取得真实kernel/数据转换成本；目前只有视觉整段时间，不能声称内部已定位 |
+| 2 | 真正单相机执行图＋视觉512/384/256固定尺寸扫描 | 视觉patch16对应1024/576/256个token；须验证位置编码、连接器scale4的形状和重新导出图。缩短prefix须同步重编RKLLM/专家及更新KV映射，不能将旧双视图特征复用代理称完整单相机实现 |
+| 3 | 原10步作为教师的5/3/1步蒸馏 | 目标是少次前向复现多步动作；之前直接减步已有速度数据，但无质量结论。不能把通用动作教师损失或简单改num_steps称完成少步蒸馏 |
+| 4 | 结构化剪枝：视觉/专家FFN中间通道或整层 | 真实缩小稠密矩阵，按NPU对齐重新编译，保留或明确适配接口；需要蒸馏恢复和闭环验证。动态mask若不减少实际执行shape，不保证硬件提速 |
+| 5 | 视觉主干内部token合并/裁剪 | 必须发生在视觉编码早期才可能减少其主要计算；当前连接器已经将1024压成64，在连接器后再裁token主要影响语言/专家，不省此前视觉主干 |
+| 6 | 语言剪层或更换小骨干 | 存储潜力大但当前单段延迟优先级较低；语言KV层数/头数/维度与专家配对、RKLLM缓存ABI均需适配和再训练，不能直接换checkpoint |
+| 7 | 跨观测视觉/KV复用、流水调度 | 图像或机器人状态变化会使缓存过期；减少重算会改变策略的新鲜度，异步本身不缩短串行依赖，不作为免费无损加速 |
+
+分辨率512→256只将token数减至1/4、注意力矩阵元素数减至1/16，**不是整段视觉已实测4倍/16倍加速**。重编译能否仍使用NPU、低分辨率质量、内存和实际延迟均未知。
+
+研究参考：[SmolVLA原论文](https://arxiv.org/abs/2506.01844)、[SnapFlow少步自蒸馏](https://arxiv.org/abs/2604.05656)、[AdaVLA动态步数/MLP策略](https://arxiv.org/abs/2608.29208)、[MoLe-VLA动态层选择](https://arxiv.org/abs/2503.20384)。论文在其他设备或策略上的加速不能转移成RK3588测量；动态方法需额外解决固定shape编译、选层开销与runtime兼容。SmolVLA当前语言32→16层截断已在checkpoint配置中，不把同一截断再算一次新优化。
+
+## 固定10步积分的极限速度快速探测（2026-10-15，未评质量）
+
+用户授权先忽略任务效果，保留10步Euler，快速探测RK3588能否供给30Hz。沿用现有LIBERO板端结构，不是新下载smolvla_base的SO-101适配；终版models/final、正式默认配置与系统库均未覆盖。实验目录`runs/speed30_tenstep_v1/`，板端`/dev/shm/qvla_speed30_tenstep_v1`，可读配置`config/runtime_speed_probe_tenstep.json`。
+
+### 实际修改与原理
+
+- 视觉输入从512扫描256/128。使用本地原始FP checkpoint的vision+connector导出，W8A8默认量化；位置索引按原512位置网格缩放取样。128输入patch16得到8×8=64个视觉主干token，connector scale4降至2×2=4个token；为复用原板端接口，将该2×2特征nearest扩至8×8=64，再复用为第二视图特征。256对应视觉256token、connector16token再扩展至64。这是有意改变语义的速度代理，不是原模型等价或完整单相机策略。语言仍固定160-token RKLLM计算，不跳过语言。
+- 专家先做MLP宽度2048→1024/512：每个16层的gate/up按输出通道切片、down按对应输入通道切片，共48个权重矩阵；保持隐藏宽度720、层数16和10步积分。不是把权重置零，而是实际减小矩阵。未做恢复训练，选择leading channels不代表质量最优。
+- 宽度剪枝收益有限后，增加结构化深度16→8/4，保留前N层的完整Attention/MLP，将其最后残差直接接既有final norm与action projection，ONNX backward extraction删除后续层。输入只保留前N层语言KV，运行时adapter筛选对应输入；语言仍生成16层KV，其余不送入裁剪后的专家。层数与积分次数是不同轴，所有候选仍有10次真实专家图执行、50步×7维输出。深度候选使用原2048宽度。
+- 不是缓存或跳过动作专家，也没有把一轮结果复制成10轮。固定KV投影缓存、RoPE预计算和原生零拷贝本轮尚未实现，不能列为本轮已获得收益。
+
+### 构建与测量
+
+构建代码`qvla/conversion/build_speed_candidates.py`，四种模式vision/expert/depth/compile；GPU环境现有torch导出，ONNX复用esp-ml安装路径，RKNN编译使用本地Toolkit2 2.3.2、W8A8 channel、float16默认浮点格式、optimization3。视觉使用一份已有真实vision_input做校准，专家使用一份既有真实expert_boundary；单样本仅速度探测，不作为正式校准。源checkpoint与新图hash记录于各export.json/compile.json及artifacts.json。专家来自原始FP ONNX，不是所选无教师V1 master；语言/CPU沿用已选部署资产，不能声称严格同V1量化图或任务质量保持。
+
+测速入口`qvla/evaluation/speed_ceiling.py`新增实验参数--image-size与--expert-layers，默认runtime未改。单相机一次真实视觉调用、语言1次、专家10次；CPU核3/4/5/6 performance、视觉三核、专家核0、语言CPU3线程、NPU读数1GHz。串行测量包含前后处理与CPU输出，不含初始化、相机、网络、电机；每组预热1次，前7组测3次、深度组测5次。相同固定离线图像/state/task/noise，原始输入hash沿用lowest_speed报告。所有9组输出正常、有限；finite不代表动作正确。
+
+| 候选 | 分辨率 | 专家层数 | FFN宽度 | 次数 | 10步积分P50 ms | 最短 ms |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| `baseline512` | 512 | 16 | 2048 | 3 | 2783.329 | 2725.027 |
+| `v256_full` | 256 | 16 | 2048 | 3 | 1838.296 | 1807.394 |
+| `v128_full` | 128 | 16 | 2048 | 3 | 1734.362 | 1713.702 |
+| `v256_ffn1024` | 256 | 16 | 1024 | 3 | 1796.789 | 1732.786 |
+| `v128_ffn1024` | 128 | 16 | 1024 | 3 | 1707.908 | 1707.202 |
+| `v256_ffn512` | 256 | 16 | 512 | 3 | 1768.345 | 1715.083 |
+| `v128_ffn512` | 128 | 16 | 512 | 3 | 1678.403 | 1676.816 |
+| `v128_depth8` | 128 | 8 | 2048 | 5 | 1066.299 | 1045.771 |
+| `v128_depth4` | 128 | 4 | 2048 | 5 | 705.145 | 640.505 |
+
+128分辨率完整16层专家仍约1.734秒，视觉整段仅约35ms，瓶颈已转移到专家约1.423秒及语言约296ms；FFN缩到512时整块约1.678秒，专家约1.330秒，改善有限。8层专家整块约1.066秒（专家约720ms），4层约0.705秒（专家约358ms）。这说明在此转换/执行路径上，减少专家深度的实际收益明显大于仅缩MLP宽度；没有据此证明内部唯一瓶颈或质量可接受。
+
+### 30Hz动作供给短测（无真实控制）
+
+每个候选每块50步动作，30Hz预算1666.667ms。先对当时最快的128/FFN512/16层做10秒队列供给，后对最终最快128/4层/FFN2048做同样短测。使用真实板端整策略前向，固定输入每块重算；初始50步动作在计时前生成，Queue容量50，推理线程和30Hz消费线程并行；消费者仅取向量，不写电机、不采相机、不做时间戳动作替换。
+
+最终4层候选：300个tick、6次后台推理，断供0次、worker错误0次；推理P50 696.199ms、最大955.019ms。tick迟到P95 0.075ms、最大0.552ms，迟到超过33.333ms为0次。原始`board/shadow_depth30.json`。
+
+前一16层/FFN512候选短测也无断供，但其串行P50高于预算、短测时又低于预算，余量过小，不能据10秒队列断供0就声称长期稳定。最终4层候选的速度余量明显更大，但同样未证明实时控制、动作新鲜度/连续性或任务成功率。
+
+结论：**保留10步积分，通过低分辨率＋专家结构剪枝，可在当前RK3588实现低于1.67秒的真实计算与30Hz模拟队列供给**。不是保持原模型结构/质量的无损加速，不是SO-101六关节控制已实现，也不是全局理论速度极限。效果恢复尚未开始。CPU governor在两轮测速及shadow结束均恢复schedutil。
+
+原始板测json/log、逐候选部署manifest归档于`runs/speed30_tenstep_v1/board/`，计算/供给汇总`summary.json`；运行配置及精度/形状身份见`config/runtime_speed_probe_tenstep.json`。构建产物未加入正式模型发布。
