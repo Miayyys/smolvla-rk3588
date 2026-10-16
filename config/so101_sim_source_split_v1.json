@@ -1,0 +1,22 @@
+{
+  "splits": {
+    "train": [
+      5,
+      6,
+      0,
+      7,
+      3,
+      2,
+      4,
+      9
+    ],
+    "validation": [
+      1
+    ],
+    "test": [
+      8
+    ]
+  },
+  "seed": 42,
+  "scope": "source-episode split before success filtering"
+}

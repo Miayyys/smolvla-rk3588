@@ -1,0 +1,33 @@
+{
+  "model_dir": "artifacts/smolvla_base",
+  "vlm_assets_dir": "artifacts/transfer/smolvlm2_assets",
+  "dataset_root": "runs/so101_scripted_data_v1",
+  "partition": "runs/so101_scripted_data_v1/manifest.json",
+  "output": "runs/so101_scripted_full_v1",
+  "seed": 42,
+  "image_size": 512,
+  "batch_size": 2,
+  "gradient_accumulation": 8,
+  "steps": 6000,
+  "learning_rate": 0.0001,
+  "minimum_learning_rate": 1e-05,
+  "warmup_steps": 300,
+  "weight_decay": 1e-10,
+  "gradient_clip": 10.0,
+  "eval_every": 500,
+  "minimum_steps": 3000,
+  "patience_evaluations": 4,
+  "validation_frames_per_episode": 3,
+  "precision": "float32 master weights; CUDA bfloat16 autocast",
+  "training_scope": "official default: freeze VLM; update all 16 action expert layers, state and action interfaces",
+  "task": "Pick up the red cube and place it on the blue circle.",
+  "camera_map": {
+    "observation.images.camera1": "overhead_camera",
+    "observation.images.camera2": "wrist_camera"
+  },
+  "teacher_loss": false,
+  "quantization": false,
+  "evaluation": "scripted_sim",
+  "data_scope": "all 350 successful scripted training episodes; offline check on 27 validation episodes x 3 frames; test seeds unused",
+  "save_last": false
+}
