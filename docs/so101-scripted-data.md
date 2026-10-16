@@ -256,3 +256,12 @@ setsid nohup /root/qvla/.venv/bin/python -m qvla.evaluation.finetune_so100_real 
 - 抓住未完成20个，最终方块离目标1.4–28.9cm，其中1.4cm的一例未判成功，未拆分原因。
 - 结论边界：离线MAE从0.198降到0.163，同30个种子上的完成数不变（3/30），接近精度没有改善；30个种子的差异在波动范围内，只能说没有明显提升，不能说变差。与第5000步诊断一致：离线误差下降没有转化为抓取成功率，单靠继续训练预计提升有限（未测量，以最终评测为准）。训练继续至30000步。
 - 第10000步的模型与续训状态已在GPUServer冻结到`runs/backup_full_v2_step10000`（含`SHA256SUMS`），供拉回本地。
+
+### GPUServer欠费停机（2026-10-16 20:05前后）
+
+20:05连接返回`websocket: bad handshake: HTTP error: 404`，实例不可用，训练中断。最后一次确认是19:36训练到第11000步；第10000步之后的离线验证、checkpoint和训练日志均未取回，实际停在哪一步未知。
+
+- 已在本地：`/home/loser/Study/QVLA/runs/so101_backup/full_v2_step10000`（主仓库`runs/`，Git忽略），即第10000步best/last（model `a3bc9ece544b612c`）、`training_state.pt`（step 10000，可续训）、`events.jsonl`、stats、prepared、配置。20:06按`SHA256SUMS`逐个校验，15/15一致。
+- 仅剩数字记录、产物未取回：第5000/10000步闭环评测的`report.json`与GIF（第5000步的5个GIF与验证`report.json`在会话临时目录）、拟合诊断`fit.json`、v2数据（16GB，可按`config/so101_scripted_data_v2.json`与固定种子重新生成，上次8 worker用时2846s）。
+- 服务器上的venv、`/root/nvidia-egl-550`、Nexus源码同样不可用。
+- 基线A按第10000步作为当前可用版本；30000步的完整训练未完成。
