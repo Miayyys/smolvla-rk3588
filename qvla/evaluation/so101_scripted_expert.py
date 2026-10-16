@@ -323,6 +323,8 @@ class Expert:
         if self.phase != phase:
             self.stall = 0
         goal, rot, speed = self._goal()
+        # Recorded only (goal-conditioned labels); never read back by the expert.
+        self.last_goal = (goal.copy(), np.array(rot, dtype=float).copy(), float(speed))
         step = speed / 30.0
         delta = goal - self.ref
         dist = np.linalg.norm(delta)
@@ -340,8 +342,13 @@ class Expert:
         return np.concatenate([q, [self.gripper]]).astype('float64')
 
 
-def run_episode(env, seed, noise_std_deg=0.0, noise_theta=0.15, max_steps=900, recorder=None, params=None, rng=None):
-    """Roll out the expert. Executed = label + OU noise on the 5 arm joints (none while closing)."""
+def run_episode(env, seed, noise_std_deg=0.0, noise_theta=0.15, max_steps=900, recorder=None, params=None, rng=None,
+                probe=None):
+    """Roll out the expert. Executed = label + OU noise on the 5 arm joints (none while closing).
+
+    ``probe(expert)`` runs right after ``recorder`` for the same observation, before the step,
+    so privileged simulator labels it reads are synchronous with the recorded frame.
+    """
     obs, info0 = env.reset(seed=seed)
     expert = Expert(env, params or ExpertParams())
     expert.failed = False
@@ -359,6 +366,8 @@ def run_episode(env, seed, noise_std_deg=0.0, noise_theta=0.15, max_steps=900, r
         executed = np.clip(executed, u._target_low, u._target_high)
         if recorder is not None:
             recorder(obs, label, executed, expert.phase)
+        if probe is not None:
+            probe(expert)
         obs, _, terminated, truncated, info = env.step(executed.astype('float32'))
         steps += 1
         success |= bool(info['success']); grasped |= bool(info['is_grasped'] >= 0.5)

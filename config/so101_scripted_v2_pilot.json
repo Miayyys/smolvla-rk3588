@@ -1,0 +1,32 @@
+{
+  "output": "runs/so101_scripted_v2_pilot_fk",
+  "splits": {
+    "train": [
+      0,
+      16
+    ],
+    "validation": [
+      100000,
+      4
+    ]
+  },
+  "noise_levels_deg": [
+    0.0,
+    1.0,
+    2.0
+  ],
+  "image_size": [
+    320,
+    240
+  ],
+  "cameras": [
+    "overhead_camera",
+    "wrist_camera"
+  ],
+  "jpeg_quality": 90,
+  "max_steps": 900,
+  "workers": 8,
+  "requirement": "pilot: same seeds and noise levels as v1 so states/actions/phases can be compared frame by frame; measures GPUServer speed",
+  "env": "MuJoCoPickAndPlace-v1, author profile (red cube, blue disc, gray ground), pd_joint_pos, 1/300 s physics, 30 Hz control, implicitfast/noslip3/tol1e-8",
+  "labels": "clean expert joint targets for the measured state (dataset units: degrees, gripper 0-100); executed adds OU noise only in pregrasp/lift/carry"
+}

@@ -119,3 +119,75 @@
 - 闭环默认改为执行10步或更少，并补充模拟推理延迟的异步评测。
 - 若加长训练后wrist_roll仍是最大误差，再检查标签在±45°处折返和180°翻转造成的不连续，以及冻结VLM的影响。
 - 测试集只在最终模型确定后评测一次。
+
+## v2数据：GPUServer生成并补录特权标签（2026-10-16）
+
+目的：为原结构基线加长训练和[目标条件化分层策略](so101-goal-conditioned-design.md)准备更大的同分布数据，并补录目标条件化训练所需的逐帧标签。训练/验证/测试仍按环境种子在过滤前固定。
+
+### 代码改动
+
+- `so101_scripted_expert.py`：`act()`把当步计算出的笛卡尔目标存入`last_goal`（只记录，专家不回读）；`run_episode`增加`probe(expert)`回调，在记录观测之后、执行step之前调用。
+- `generate_so101_scripted_data.py`：每帧新增`tcp_pose`(7，世界系m，四元数wxyz)、`object_pose`(7)、`target_pos`(3)、`goal_pos`(3)、`goal_rot`(9，行优先3×3)、`attempt`。阶段末夹爪目标可由已存动作标签离线得到，不另存。
+- `check_so101_privileged_labels.py`：同种子同噪声档与参考数据逐帧比对、FK一致性、目标合理性检查。
+- Nexus源码路径改为环境变量`SO101_NEXUS_SOURCE`（服务器为`/root/so101-nexus`，提交7bdb671）。
+
+### 实测发现
+
+1. **仿真site位姿滞后一个物理子步。** `mj_step`先算运动学再积分，step后`site_xpos`对应上一子步（1/300s）的qpos。实测3个回合794帧：`obs['state']`与qpos差≤1.2e-7rad，数据集单位往返无损，但FK(qpos)与`_get_tcp_pose()`相差平均0.49mm、最大2.94mm；运动阶段大（carry平均1.18mm），静止阶段接近0（hold 0.009mm）。因此TCP标签改为在scratch MjData上由当前qpos做FK得到，与部署时“由state做FK求Δ”一致；不改动`u.data`，因为专家自身读取的是滞后值。
+2. **BLAS多线程造成CPU超额。** 8个worker每个8线程，负载约28（8核）。限制`OMP/OPENBLAS/MKL_NUM_THREADS=1`后，同20种子试跑每回合中位耗时由10.68s降至3.26s；轨迹与多线程版本逐帧完全相同（差0）。
+3. **服务器渲染。** 容器未挂载NVIDIA图形库（只有Mesa EGL，初始化失败）。Ubuntu源中的`libnvidia-gl-550`已是过渡到580的空包，apt安装会连带580驱动库，可能破坏CUDA，未采用。改为从阿里云镜像下载`libnvidia-gl-550-server_550.163.01-0ubuntu0.20.04.1`（147MB，与驱动550.163.01一致），只解压到`/root/nvidia-egl-550`，经`__EGL_VENDOR_LIBRARY_FILENAMES`和`LD_LIBRARY_PATH`使用（`env.sh`）。`GL_RENDERER`为`NVIDIA A10/PCIe/SSE2`；SO101环境含双相机渲染1.76ms/步（零动作）。实测单进程生成每帧：专家3.53ms、step(物理+渲染)3.01ms、JPEG 0.74ms。
+
+### 试跑检验（训练种子0–15、验证100000–100003，噪声档同v1）
+
+| 检查 | 结果 |
+|---|---|
+| 与v1同种子比较（20个） | 成功与否、帧数、阶段全部相同；actions/executed差0；states最大差7.6e-6°（本地与服务器numpy版本不同造成的float32舍入） |
+| FK一致性（修正后） | 训练2000帧/验证1020帧，TCP误差最大6.3e-5mm |
+| 目标旋转正交性 | 最大误差6.9e-8 |
+| pregrasp目标反推抓取点到物体中心 | 中位数4.8/8.3mm（训练/验证），最大21.4/26.7mm（抓取点含12mm深入与离桌抬高） |
+| 尝试次数 | 出现第1、2次尝试 |
+
+修正前的试跑（`runs/so101_scripted_v2_pilot`）TCP误差最大3.6mm，已弃用；修正后为`runs/so101_scripted_v2_pilot_fk`、单线程验证为`runs/so101_scripted_v2_pilot_t1b`。
+
+### 训练显存探测（v1数据，2步smoke，512图像，冻结VLM，bf16 autocast）
+
+batch 32峰值9.57GB，batch 64峰值15.91GB，batch 128显存不足（当时8个生成worker的EGL上下文另占约5GB）。探测时CPU被数据生成占用，耗时不作为训练速度。
+
+### 全量生成结果（`config/so101_scripted_data_v2.json`，GPUServer，单线程BLAS，8 worker，用时2846s）
+
+| 划分 | 种子 | 专家成功/存储 | 帧数 | 每段帧数 min/mean/max | 图像字节（顶视+腕部） |
+|---|---|---:|---:|---|---:|
+| 训练 | 0–3999，噪声0/1/2/3°按seed%4 | 3012（75.3%） | 978,418 | 202/324.8/900 | 15.38GB |
+| 验证 | 100000–100099，无噪声 | 92（92%） | 23,677 | 211/257.4/462 | 0.37GB |
+| 测试 | 200000–200049，无噪声，未使用 | 43（86%） | 10,553 | 208/245.4/383 | 0.16GB |
+
+训练种子按噪声档的专家成功率：0° 897/1000（89.7%），1° 874/1000（87.4%），2° 844/1000（84.4%），**3° 397/1000（39.7%）**。3°执行噪声已接近专家可承受上限；存储数据中3°档只占13%（397/3012段）。训练失败988个，其中专家用完2次尝试878个，其余110个超时。物体距底座半径的成功率：<0.25m 547/598，0.25–0.3m 883/963，0.3–0.35m 821/974，0.35–0.4m 511/697，≥0.4m 250/765，远处物体覆盖仍偏少。存储的训练回合中439段（14.6%）含第2次抓取尝试（v1为30/350）。
+
+检验：
+
+- 三个划分种子互不重叠；所有浮点字段无NaN；每个划分随机200帧×2相机JPEG全部可解码且为320×240；帧序号连续，`end_rows`正确。
+- 与v1同种子同噪声档的182个回合（训练102、验证30、测试50）：成功、帧数、阶段完全相同，actions/executed差0，states最大差7.6e-6°。测试集与v1为同一批数据，验证集前30个种子与v1一致。
+- FK一致性：每划分5000帧，TCP误差最大7.7e-5mm。目标旋转正交误差≤8.2e-8。
+- 重放8段（按float32存储的executed命令重新执行）：8/8完成；state最大误差6段≤0.05°，种子998为0.15°、种子2490为1.37°。误差来自float32存储命令的舍入在接触阶段被放大；数据中的state为生成时实际记录，不受影响。v1重放误差≤0.0011°，本次更大，原因未进一步拆分。
+- 状态统计中wrist_roll标准差105.9°，远大于其他关节，与此前“±45°折返/180°翻转”的疑点一致，留待训练误差分析。
+- 抽查图像拼图（`contact_sheet.jpg`）：顶视与腕部画面完整，依次为接近、抓取、搬运、放置。
+
+数据位于GPUServer `/root/qvla_so101/runs/so101_scripted_data_v2`（16GB，Git忽略）；检验结果为同目录`verification.json`、`privileged_label_check.json`。SHA256前16位：manifest `d2d6df2b6470ae0d`，stats `cc2a6e1afb978a62`；train.npz `a47c2cf79d180480`（顶视`4b3ef7ddc4959e71`，腕部`f9d448f23199f3c0`）；validation.npz `6290bfc3034b1b6b`；test.npz `9513b9e4b4eab28c`。生成源码：专家`1596643e4a348e41`，生成器`3fab32612a2ee52f`（与本分支提交的文件一致）。
+
+## 基线A训练准备（2026-10-16，未开始正式训练）
+
+配置`config/so101_scripted_full_v2.json`：原SmolVLA结构，从`artifacts/smolvla_base`（model.safetensors SHA256 `7cd549ac…01eb`，服务器与本地逐文件一致）开始，冻结VLM，训练全部16层专家及state/action接口；双相机512；batch 64、无梯度累积、30000步；lr 1e-4，warmup 1000步，余弦降至2.5e-6；梯度裁剪10，weight decay 1e-10（以上为LeRobot SmolVLA默认值）；每1000步离线验证，至少10000步，连续5次不改善提前停止；保存best、last与续训状态。
+
+- prepare：训练3012段/978,418帧（种子0–3999的全部成功回合）；离线验证92段×3帧=276行（验证集），测试集未使用。
+- smoke（正式输出目录，2步）：16层专家梯度均为正，冻结权重无梯度，权重有更新；未写`progress.json`，不影响正式训练。
+- **数据读取修复**：`ScriptedFrames`原先直接索引`np.load`返回的NpzFile，每次访问都从归档重新读取整个数组；v2训练集上batch 64读取中位2.98s，单步4.23s。改为初始化时一次性载入（0.19s）后，batch 64读取0.10s，单步1.54s。两次40步测速第0/40步离线归一化MAE完全相同（0.7145/0.5278），读取内容不变。
+- 测速（独立目录`runs/timing_probe_v2b`，40步，不是训练结果）：稳定单步1.543s，显存峰值15.92GB，一次276行离线验证约60s。30000步预计约13.4小时（含验证），未测量完整运行。
+
+启动命令（GPUServer）：
+
+```bash
+cd /root/qvla_so101 && source /root/nvidia-egl-550/env.sh
+export PYTHONPATH=/root/qvla_so101 SO101_NEXUS_SOURCE=/root/so101-nexus
+setsid nohup /root/qvla/.venv/bin/python -m qvla.evaluation.finetune_so100_real \
+  --config config/so101_scripted_full_v2.json --stage train > runs/so101_scripted_full_v2.log 2>&1 < /dev/null &
+```

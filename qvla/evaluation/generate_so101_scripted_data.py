@@ -7,6 +7,13 @@ noise in coarse transport phases). Validation/test episodes are noiseless.
 Only successful episodes are stored as demonstrations; every attempt, including
 failures, is written to the report. Normalization statistics use successful
 training frames only.
+
+Privileged simulator labels (TCP pose, object pose, disc position, the expert's
+current Cartesian goal and attempt index) are stored per frame for
+goal-conditioned training; they are read after the frame's observation and
+before the step, and never change the expert's behaviour. The TCP label is the
+forward kinematics of the recorded joint state (the simulator's site pose lags
+qpos by one physics substep after a step).
 """
 
 import argparse
@@ -20,6 +27,9 @@ import time
 import numpy as np
 
 PHASES = ['pregrasp', 'descend', 'close', 'lift', 'carry', 'lower', 'open', 'retreat', 'hold']
+FRAME_KEYS = ('states', 'actions', 'executed', 'episodes', 'frame_index', 'phase')
+# World frame, metres; quaternions [w, x, y, z]; goal_rot is the row-major 3x3 TCP goal rotation.
+PRIVILEGED_KEYS = ('tcp_pose', 'object_pose', 'target_pos', 'goal_pos', 'goal_rot', 'attempt')
 
 
 def worker(job):
@@ -30,20 +40,33 @@ def worker(job):
     from qvla.evaluation.so101_scripted_expert import NEXUS_SOURCE
     sys.path.insert(0, NEXUS_SOURCE + '/src')
     from so101_nexus import sim_qpos_to_dataset_row
+    import mujoco
     cfg, split, seeds, shard = job
     out = Path(cfg['output']) / 'shards'; out.mkdir(parents=True, exist_ok=True)
     w, h = cfg['image_size']
     env = make_env(image_size=(w, h), cameras=True, max_episode_steps=cfg['max_steps'] + 10)
     u = env.unwrapped
     limits = (float(env.action_space.low[-1]), float(env.action_space.high[-1]))
+    # site_xpos after mj_step lags qpos by one physics substep, so the TCP label is
+    # recomputed by forward kinematics from the current qpos on a scratch copy
+    # (u.data itself is left untouched: the expert reads it).
+    scratch = mujoco.MjData(u.model)
+
+    def tcp_from_qpos():
+        scratch.qpos[:] = u.data.qpos
+        mujoco.mj_kinematics(u.model, scratch)
+        quat = np.zeros(4)
+        mujoco.mju_mat2Quat(quat, scratch.site_xmat[u._tcp_site_id])
+        return np.concatenate([scratch.site_xpos[u._tcp_site_id], quat])
+
     results = []
-    arrays = {k: [] for k in ('states', 'actions', 'executed', 'episodes', 'frame_index', 'phase')}
+    arrays = {k: [] for k in FRAME_KEYS + PRIVILEGED_KEYS}
     streams = {cam: (out / f'{split}_{shard}_{cam}.jpeg.bin').open('wb') for cam in cfg['cameras']}
     offsets = {cam: [] for cam in cfg['cameras']}; lengths = {cam: [] for cam in cfg['cameras']}
     try:
         for seed in seeds:
             noise = cfg['noise_levels_deg'][seed % len(cfg['noise_levels_deg'])] if split == 'train' else 0.0
-            buffer = []
+            buffer = []; privileged = []
 
             def record(obs, label, executed, phase):
                 images = {}
@@ -55,16 +78,25 @@ def worker(job):
                                sim_qpos_to_dataset_row(executed, gripper_limits_rad=limits).astype('float32'),
                                PHASES.index(phase), images))
 
+            def probe(expert):
+                goal, rot, _ = expert.last_goal
+                privileged.append((tcp_from_qpos().astype('float32'), u._get_object_pose().astype('float32'),
+                                   u._get_target_pos().astype('float32'), goal.astype('float32'),
+                                   rot.reshape(9).astype('float32'), int(expert.attempt)))
+
             started = time.perf_counter()
-            result = run_episode(env, seed, noise_std_deg=noise, max_steps=cfg['max_steps'], recorder=record)
+            result = run_episode(env, seed, noise_std_deg=noise, max_steps=cfg['max_steps'], recorder=record, probe=probe)
+            assert len(privileged) == len(buffer)
             result.update({'split': split, 'frames': len(buffer), 'seconds': time.perf_counter() - started,
                            'task': u.task_description,
                            'object_xy': u._get_object_pose()[:2].tolist(), 'target_xy': u._get_target_pos()[:2].tolist()})
             result['stored'] = bool(result['success'])
             if result['stored']:
-                for index, (state, action, executed, phase, images) in enumerate(buffer):
+                for index, ((state, action, executed, phase, images), extra) in enumerate(zip(buffer, privileged)):
                     arrays['states'].append(state); arrays['actions'].append(action); arrays['executed'].append(executed)
                     arrays['episodes'].append(seed); arrays['frame_index'].append(index); arrays['phase'].append(phase)
+                    for key, value in zip(PRIVILEGED_KEYS, extra):
+                        arrays[key].append(value)
                     for cam in cfg['cameras']:
                         offsets[cam].append(streams[cam].tell()); lengths[cam].append(len(images[cam]))
                         streams[cam].write(images[cam])
@@ -86,7 +118,7 @@ def merge(cfg, all_results):
     manifest = {'config': cfg, 'phases': PHASES, 'splits': {}, 'episodes': all_results}
     for split in cfg['splits']:
         parts = sorted(shards.glob(f'{split}_*.npz'), key=lambda p: int(p.stem.split('_')[1]))
-        merged = {k: [] for k in ('states', 'actions', 'executed', 'episodes', 'frame_index', 'phase')}
+        merged = {k: [] for k in FRAME_KEYS + PRIVILEGED_KEYS}
         cam_offsets = {cam: [] for cam in cfg['cameras']}; cam_lengths = {cam: [] for cam in cfg['cameras']}
         targets = {cam: (out / f'{split}_{cam}.jpeg.bin').open('wb') for cam in cfg['cameras']}
         try:

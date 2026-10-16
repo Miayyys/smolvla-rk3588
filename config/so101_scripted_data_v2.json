@@ -1,0 +1,37 @@
+{
+  "output": "runs/so101_scripted_data_v2",
+  "splits": {
+    "train": [
+      0,
+      4000
+    ],
+    "validation": [
+      100000,
+      100
+    ],
+    "test": [
+      200000,
+      50
+    ]
+  },
+  "noise_levels_deg": [
+    0.0,
+    1.0,
+    2.0,
+    3.0
+  ],
+  "image_size": [
+    320,
+    240
+  ],
+  "cameras": [
+    "overhead_camera",
+    "wrist_camera"
+  ],
+  "jpeg_quality": 90,
+  "max_steps": 900,
+  "workers": 8,
+  "requirement": "train seeds 0-3999 (v1 used 0-399 with 3 noise levels, so per-seed noise differs); validation 100000-100099 contains the v1 validation seeds; test seeds unchanged and unused; validation/test noiseless",
+  "env": "MuJoCoPickAndPlace-v1, author profile (red cube, blue disc, gray ground), pd_joint_pos, 1/300 s physics, 30 Hz control, implicitfast/noslip3/tol1e-8",
+  "labels": "clean expert joint targets for the measured state (dataset units: degrees, gripper 0-100); executed adds OU noise only in pregrasp/lift/carry; per-frame privileged labels: tcp_pose, object_pose, target_pos, expert goal_pos/goal_rot, attempt"
+}

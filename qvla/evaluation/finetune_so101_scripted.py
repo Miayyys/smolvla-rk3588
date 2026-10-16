@@ -69,7 +69,9 @@ class ScriptedFrames:
 
     def __init__(self, cfg, out):
         source = Path(cfg['dataset_root'])
-        self.parts = [np.load(source / f'{split}.npz') for split in ('train', 'validation')]
+        # Materialize every array once: indexing an NpzFile re-reads the whole array from the archive
+        # on each access, which made a 64-row batch take ~3 s on the 978k-frame v2 training split.
+        self.parts = [{k: v for k, v in np.load(source / f'{split}.npz').items()} for split in ('train', 'validation')]
         self.base = len(self.parts[0]['episodes'])
         self.streams = [{cam: (source / f'{split}_{cam}.jpeg.bin').open('rb') for cam in cfg['camera_map'].values()}
                         for split in ('train', 'validation')]
