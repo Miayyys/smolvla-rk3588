@@ -12,11 +12,12 @@ import subprocess
 import sys
 
 import numpy as np
+from qvla.evaluation.so101_paths import NEXUS_SOURCE
 
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument('--source', type=Path, default=Path('/home/loser/Study/so101-nexus'))
+    p.add_argument('--source', type=Path, default=Path(NEXUS_SOURCE))
     p.add_argument('--dataset', type=Path, default=Path('artifacts/datasets/so101_sim_pickplace'))
     p.add_argument('--output', type=Path, default=Path('runs/so101_sim_demo_replay_v1'))
     p.add_argument('--release-tail', action='store_true', help='Append a new slow-release/settle segment; preserve original score separately')

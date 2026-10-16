@@ -16,6 +16,7 @@ import time
 from types import SimpleNamespace
 
 import numpy as np
+from qvla.evaluation.so101_paths import NEXUS_SOURCE
 
 
 def file_sha(path):
@@ -28,7 +29,7 @@ def file_sha(path):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--source', type=Path, default=Path('/home/loser/Study/so101-nexus'))
+    parser.add_argument('--source', type=Path, default=Path(NEXUS_SOURCE))
     parser.add_argument('--dataset', type=Path, default=Path('artifacts/datasets/svla_so100_pickplace'))
     parser.add_argument('--partition', type=Path, default=Path('runs/so100_pickplace_readiness_v1/report.json'))
     parser.add_argument('--output', type=Path, required=True)

@@ -12,6 +12,7 @@ from pathlib import Path
 import sys
 
 import numpy as np
+from qvla.evaluation.so101_paths import NEXUS_SOURCE
 
 
 def make_scene(root, names, row, config, source):
@@ -47,7 +48,7 @@ def main():
     args=p.parse_args()
     os.environ.setdefault('MUJOCO_GL','egl')
     cfg=json.loads(args.config.read_text());out=Path(cfg['output']);out.mkdir(exist_ok=True,parents=True)
-    sys.path.insert(0,'/home/loser/Study/so101-nexus/src')
+    sys.path.insert(0,NEXUS_SOURCE+'/src')
     import pyarrow.parquet as pq
     from PIL import Image
     from so101_nexus import dataset_row_to_sim_qpos,sim_qpos_to_dataset_row
@@ -66,7 +67,7 @@ def main():
     with (out/'top_frames.jpeg.bin').open('wb') as stream:
         for ep in sorted(set(ids.tolist())):
             rows=np.flatnonzero(ids==ep);sequence=original[rows]
-            env,obs=make_scene(root,names,envstates[rows[0]],cfg,'/home/loser/Study/so101-nexus')
+            env,obs=make_scene(root,names,envstates[rows[0]],cfg,NEXUS_SOURCE)
             start=len(eps);success=False
             try:
                 limits=(float(env.action_space.low[-1]),float(env.action_space.high[-1]))

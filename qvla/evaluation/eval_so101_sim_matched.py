@@ -8,6 +8,7 @@ import time
 from types import SimpleNamespace
 
 import numpy as np
+from qvla.evaluation.so101_paths import NEXUS_SOURCE
 
 
 def main():
@@ -32,7 +33,7 @@ def main():
     from qvla.evaluation.finetune_so100_real import sha
     # make_scene imports the pinned simulator source before these helpers.
     import sys
-    sys.path.insert(0,'/home/loser/Study/so101-nexus/src')
+    sys.path.insert(0,NEXUS_SOURCE+'/src')
     from so101_nexus import sim_qpos_to_dataset_row,dataset_row_to_sim_qpos
 
     prepared=json.loads((run/'prepared.json').read_text())
@@ -54,7 +55,7 @@ def main():
             episodes = [ep for ep in episodes if ep in args.source_episodes]
         for ep, execute_count in [(ep,n) for ep in episodes for n in args.execute_actions]:
             scene=next(x for x in prepared['scene_initializations'] if x['episode']==ep)
-            env,obs=make_scene(cfg['dataset_root'],scene['environment_state_names'],scene['initial_environment_state'],cfg,'/home/loser/Study/so101-nexus')
+            env,obs=make_scene(cfg['dataset_root'],scene['environment_state_names'],scene['initial_environment_state'],cfg,NEXUS_SOURCE)
             try:
                 policy.reset();limits=(float(env.action_space.low[-1]),float(env.action_space.high[-1]))
                 snapshots=[];trace=[];times=[];success=grasp=False;chunks=0;started=time.perf_counter()

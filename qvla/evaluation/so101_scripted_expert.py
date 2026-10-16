@@ -17,7 +17,7 @@ from pathlib import Path
 
 import numpy as np
 
-NEXUS_SOURCE = '/home/loser/Study/so101-nexus'
+from qvla.evaluation.so101_paths import NEXUS_SOURCE
 PROFILE = 'artifacts/datasets/so101_sim_pickplace/meta/so101_nexus_env.json'
 GRIPPER_OPEN = 0.9      # rad; jaw clears a 25 mm cube
 GRIPPER_CLOSED = -0.17  # rad; lower joint target, contact stops the jaw first

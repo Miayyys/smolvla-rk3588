@@ -12,6 +12,7 @@ from pathlib import Path
 import sys
 
 import numpy as np
+from qvla.evaluation.so101_paths import NEXUS_SOURCE
 
 
 def main():
@@ -22,7 +23,7 @@ def main():
     p.add_argument('--trials', type=int, default=6)
     args = p.parse_args()
     os.environ.setdefault('MUJOCO_GL', 'egl')
-    sys.path.insert(0, '/home/loser/Study/so101-nexus/src')
+    sys.path.insert(0, NEXUS_SOURCE+'/src')
     from so101_nexus import dataset_row_to_sim_qpos
     from qvla.evaluation.prepare_so101_sim_training import make_scene
     from qvla.evaluation.finetune_so100_real import sha
@@ -32,7 +33,7 @@ def main():
     data = np.load(run / 'data.npz'); demo = data['actions'][data['episodes'] == args.source_episode]
 
     def replay(actions):
-        env, _ = make_scene(cfg['dataset_root'], scene['environment_state_names'], scene['initial_environment_state'], cfg, '/home/loser/Study/so101-nexus')
+        env, _ = make_scene(cfg['dataset_root'], scene['environment_state_names'], scene['initial_environment_state'], cfg, NEXUS_SOURCE)
         try:
             limits = (float(env.action_space.low[-1]), float(env.action_space.high[-1]))
             success = grasp = False; tcp = []; goal = []

@@ -11,6 +11,7 @@ import os
 from pathlib import Path
 
 import numpy as np
+from qvla.evaluation.so101_paths import NEXUS_SOURCE
 
 
 def main():
@@ -27,7 +28,7 @@ def main():
         nearest=int(np.argmin([r['tcp_to_object_m'] for r in trace]))
         scene=next(s for s in prep['scene_initializations'] if s['episode']==ep)
         for intervention in ['hold','close']:
-            env,obs=make_scene(cfg['dataset_root'],scene['environment_state_names'],scene['initial_environment_state'],cfg,'/home/loser/Study/so101-nexus')
+            env,obs=make_scene(cfg['dataset_root'],scene['environment_state_names'],scene['initial_environment_state'],cfg,NEXUS_SOURCE)
             try:
                 for row in trace[:nearest+1]:
                     obs,_,terminated,truncated,info=env.step(np.array(row['target_rad'],dtype='float32'))

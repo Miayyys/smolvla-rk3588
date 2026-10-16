@@ -12,11 +12,12 @@ import subprocess
 import sys
 
 import numpy as np
+from qvla.evaluation.so101_paths import NEXUS_SOURCE
 
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument('--source', type=Path, default=Path('/home/loser/Study/so101-nexus'))
+    p.add_argument('--source', type=Path, default=Path(NEXUS_SOURCE))
     p.add_argument('--training-run', type=Path, default=Path('runs/so100_real_finetune_v1'))
     p.add_argument('--output', type=Path, default=Path('runs/so101_transfer_diagnosis_v1'))
     args = p.parse_args()
