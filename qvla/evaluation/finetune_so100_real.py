@@ -237,6 +237,18 @@ def train(cfg, out, smoke, resume=False):
         emit(out, {'stage': 'resumed', 'step': start_step})
     else:
         best = float('inf') if smoke else evaluate(0)
+    # Prefetch: the next micro-batch is decoded on a worker thread while the GPU runs the current one.
+    # Rows are still drawn from ``rng`` on this thread in the original order, and checkpoints store the
+    # RNG state from before the prefetched draw, so training and resumption are unchanged.
+    from concurrent.futures import ThreadPoolExecutor
+    loader = ThreadPoolExecutor(max_workers=1)
+
+    def draw():
+        state = rng.bit_generator.state
+        rows = rng.choice(frames.data['train_rows'], cfg['batch_size'], replace=True)
+        return state, loader.submit(frames.batch, rows)
+
+    pending = draw()
     first_param = next(p for n, p in parameters if 'action_out_proj.weight' in n)
     initial = first_param.detach().clone()
     for step in range(start_step + 1, (2 if smoke else cfg['steps']) + 1):
@@ -248,8 +260,9 @@ def train(cfg, out, smoke, resume=False):
         for group in optimizer.param_groups: group['lr'] = lr
         losses = []
         for _ in range(1 if smoke else cfg['gradient_accumulation']):
-            rows = rng.choice(frames.data['train_rows'], cfg['batch_size'], replace=True)
-            batch = pre(frames.batch(rows))
+            raw = pending[1].result()
+            pending = draw()
+            batch = pre(raw)
             with torch.autocast('cuda', dtype=torch.bfloat16):
                 loss, _ = policy(batch)
             if not torch.isfinite(loss): raise RuntimeError('Nonfinite loss')
@@ -278,6 +291,7 @@ def train(cfg, out, smoke, resume=False):
         if smoke:
             continue
         if step % cfg['eval_every'] == 0 or step == cfg['steps']:
+            pending[1].result()  # no decoding in flight while evaluation reads the same frame source
             metric = evaluate(step)
             if metric < best:
                 best, best_step, stale = metric, step, 0
@@ -292,7 +306,7 @@ def train(cfg, out, smoke, resume=False):
                 continue
             save_model('last')
             temporary = out / 'training_state.partial.pt'
-            torch.save({'step': step, 'optimizer': optimizer.state_dict(), 'rng': rng.bit_generator.state,
+            torch.save({'step': step, 'optimizer': optimizer.state_dict(), 'rng': pending[0],
                         'torch_rng': torch.get_rng_state(), 'cuda_rng': torch.cuda.get_rng_state(),
                         'best_metric': best, 'best_step': best_step, 'stale_evaluations': stale, 'config': cfg,
                         'last_weights_sha256': sha(out / 'last/model.safetensors')}, temporary)
@@ -300,6 +314,7 @@ def train(cfg, out, smoke, resume=False):
             if step >= cfg['minimum_steps'] and stale >= cfg['patience_evaluations']:
                 emit(out, {'stage': 'early_stop', 'step': step, 'best_step': best_step})
                 break
+    loader.shutdown(wait=True)
     delta = float((first_param.detach() - initial).norm())
     assert delta > 0 and math.isfinite(delta)
     emit(out, {'stage': 'smoke_completed' if smoke else 'completed', 'steps': step,

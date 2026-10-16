@@ -191,3 +191,10 @@ export PYTHONPATH=/root/qvla_so101 SO101_NEXUS_SOURCE=/root/so101-nexus
 setsid nohup /root/qvla/.venv/bin/python -m qvla.evaluation.finetune_so100_real \
   --config config/so101_scripted_full_v2.json --stage train > runs/so101_scripted_full_v2.log 2>&1 < /dev/null &
 ```
+
+### 训练加速与启动（2026-10-16）
+
+- 实测一步（batch 64）分解：视觉编码（128张图512×512，冻结VLM前向）0.70s，Transformer前向0.27s，反向0.40s，数据读取0.10s，预处理与优化器0.04s，合计1.51s。视觉编码为主要开销；冻结视觉特征缓存需约240GB磁盘，超出可用77GB，未采用；降至256分辨率会改变输入、与v1基线不可直接比较，未采用。
+- 训练器加入单线程预取：下一批的JPEG解码与当前GPU计算重叠；行仍在主线程按原顺序从`rng`抽取，检查点保存预取抽样之前的RNG状态。与修改前同配置40步对比：第1/10/20/30/40步loss与梯度范数逐位相同，第0/40步离线MAE相同；稳定单步1.543s→1.456s。
+- 基线A于14:20在GPUServer启动（`runs/so101_scripted_full_v2`），第0步离线归一化MAE 0.7145，第1步loss与测速一致，GPU利用率99%，显存15.7GB。30000步预计约12.6小时（含验证），实际时长待测。
+- 中途检查：`scripts/so101_midrun_eval.sh`在服务器后台等待训练越过第10000步并完成保存后，快照当时best（记录best步、离线MAE与SHA256），在100个验证种子上闭环评测（每块执行10步，成功即停，上限900步），训练继续。流程已用40步测速模型在2个种子上验证可运行；训练与评测同时运行显存18.65/23GB。
