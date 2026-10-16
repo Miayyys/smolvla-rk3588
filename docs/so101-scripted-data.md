@@ -271,3 +271,26 @@ setsid nohup /root/qvla/.venv/bin/python -m qvla.evaluation.finetune_so100_real 
 v1数据（结构与v2相同），基线A的超参数，但micro-batch 16×梯度累积4（有效batch 64，与A一致），12步，`.venv-haq-local`（torch 2.7.1+cu118），配置仅存会话临时目录，不是训练结果。第1→10步稳定单步**2.77s**（A10为1.456s），显存峰值**6.86GB**（8GB卡）；离线归一化MAE 0.690→0.579。测速目录与checkpoint已删除，日志`runs/timing_probe_local_b16.log`。
 
 按此推算（未测量完整运行）：10000步约7.7小时，加每1000步离线验证约8小时；笔记本长时间满载可能降频。v2数据需在本地重新生成（服务器8 worker用时2846s；本地内存15GB，worker数需减少）。
+
+### v2数据本地重新生成（2026-10-16，供实验B使用）
+
+服务器停机后v2数据丢失，在本地按原配置`config/so101_scripted_data_v2.json`（8 worker，分片方式与服务器相同）重新生成。环境：`.venv-haq-local`（numpy 2.2.6，Pillow 12.3.0；服务器numpy 1.26.4），RTX 4060 Laptop EGL渲染，Nexus `7bdb671`，专家源码`1596643e4a348e41`、生成器`3fab32612a2ee52f`（与服务器相同）。worktree中`runs/`、`artifacts/`为指向主仓库同名目录的软链接（已加入本地exclude），数据实际位于`/home/loser/Study/QVLA/runs/so101_scripted_data_v2`（16GB）。
+
+- 先以试跑配置（训练0–15、验证100000–100003）检查：与本地v1同种子states/actions/executed差0，FK最大6.3e-5mm，抓取点中位数4.8/8.3mm，与服务器试跑一致；8 worker时系统内存峰值8.4GB/15GB。试跑目录已删除。
+- 全量用时2269s。训练3012段/978,418帧，验证92段/23,677帧，测试43段/10,553帧；专家成功按噪声0/1/2/3°为897/874/844/397（每档1000），与服务器相同。
+
+与基线A训练所用数据（本地备份中A的`prepared.json`/`stats.json`）比较（`compare_with_baseline_A.json`）：
+
+| 项目 | 结果 |
+|---|---|
+| 各划分回合数、帧数 | 全部相同 |
+| 训练回合种子列表（3012个） | 完全相同 |
+| `stats.json`（全部训练帧state/action均值与标准差） | SHA256相同（`cc2a6e1afb978a62`），数值差0 |
+| `{split}.npz`与JPEG文件SHA256 | 不同 |
+| JPEG总字节差 | 训练顶视−7083B/7.6GB、腕部+1784B；验证−1141/+768B；测试+69/−235B（相对约1e-6） |
+
+npz包含各帧JPEG的偏移与长度，因此图像字节不同即导致npz哈希不同。state/action标签与A所用数据在统计量上逐位相同，判断一致；图像只有极少数帧存在细微差别，来源（渲染GPU/驱动或JPEG编码库）未拆分，也无法逐帧对比（服务器图像已丢失）。实验B训练在本地图像上进行；为排除图像差异，A与B的闭环比较都在本地重新评测。
+
+其余检验（`verification.json`、`privileged_label_check.json`、`integrity_check.json`）：重放8/8完成，state误差与服务器一致（种子998为0.15°、2490为1.37°）；与本地v1同种子182个（训练102、验证30、测试50）成功、帧数、阶段全同，states/actions/executed差0；FK最大8.3e-5mm；目标旋转正交误差≤8.2e-8；出现第1、2次尝试；全部浮点数组无NaN；每划分抽400张JPEG解码成功（320×240）；划分间种子无重叠。
+
+本地SHA256前16位：manifest `a6896c8d72852b78`（含每回合用时，不可复现），stats `cc2a6e1afb978a62`；train.npz `5f25470493b0a46a`（顶视`9fd857921b1e3091`，腕部`ec837f8deffd9dd7`）；validation.npz `48066168a3ec449f`；test.npz `e4d4233a45956d7f`。
