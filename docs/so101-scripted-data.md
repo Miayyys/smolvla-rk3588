@@ -265,3 +265,9 @@ setsid nohup /root/qvla/.venv/bin/python -m qvla.evaluation.finetune_so100_real 
 - 仅剩数字记录、产物未取回：第5000/10000步闭环评测的`report.json`与GIF（第5000步的5个GIF与验证`report.json`在会话临时目录）、拟合诊断`fit.json`、v2数据（16GB，可按`config/so101_scripted_data_v2.json`与固定种子重新生成，上次8 worker用时2846s）。
 - 服务器上的venv、`/root/nvidia-egl-550`、Nexus源码同样不可用。
 - 基线A按第10000步作为当前可用版本；30000步的完整训练未完成。
+
+### 本地RTX 4060 Laptop训练测速（2026-10-16，为实验B在本地训练做准备）
+
+v1数据（结构与v2相同），基线A的超参数，但micro-batch 16×梯度累积4（有效batch 64，与A一致），12步，`.venv-haq-local`（torch 2.7.1+cu118），配置仅存会话临时目录，不是训练结果。第1→10步稳定单步**2.77s**（A10为1.456s），显存峰值**6.86GB**（8GB卡）；离线归一化MAE 0.690→0.579。测速目录与checkpoint已删除，日志`runs/timing_probe_local_b16.log`。
+
+按此推算（未测量完整运行）：10000步约7.7小时，加每1000步离线验证约8小时；笔记本长时间满载可能降频。v2数据需在本地重新生成（服务器8 worker用时2846s；本地内存15GB，worker数需减少）。
