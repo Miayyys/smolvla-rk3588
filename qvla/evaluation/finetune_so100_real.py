@@ -142,7 +142,7 @@ class Frames:
                 'action_is_pad': torch.from_numpy(np.stack(masks)), 'task': [self.task] * len(rows)}
 
 
-def train(cfg, out, smoke, resume=False):
+def train(cfg, out, smoke, resume=False, stop_step=None):
     import torch
     from lerobot.policies import make_pre_post_processors
     from qvla.evaluation.haq_offline_eval import load_policy
@@ -168,6 +168,10 @@ def train(cfg, out, smoke, resume=False):
     policy.config.input_features = {k: v for k, v in policy.config.input_features.items()
                                     if k in ['observation.state', *cameras]}
     policy.config.empty_cameras = 0
+    goal_cfg = cfg.get('goal_conditioning')
+    if goal_cfg:
+        from qvla.evaluation import so101_goal
+        so101_goal.attach(policy)
     pre, post = make_pre_post_processors(policy.config, cfg['model_dir'],
         preprocessor_overrides={
             'tokenizer_processor': {'tokenizer_name': str(Path(cfg['vlm_assets_dir']).resolve())},
@@ -186,27 +190,63 @@ def train(cfg, out, smoke, resume=False):
     (out / 'trainable.json').write_text(json.dumps({'names': [n for n, _ in parameters],
         'parameters': sum(p.numel() for _, p in parameters), 'expert_layers': trained_layers,
         'model_source_sha256': sha(Path(cfg['model_dir']) / 'model.safetensors')}, indent=2) + '\n')
-    optimizer = torch.optim.AdamW([p for _, p in parameters], lr=cfg['learning_rate'], betas=(0.9, 0.95), eps=1e-8, weight_decay=cfg['weight_decay'])
+    if goal_cfg:
+        # Expert side (incl. goal_embedding) and planner are separate groups: disjoint parameters, own clipping.
+        expert_parameters = [(n, p) for n, p in parameters if not so101_goal.planner_parameter(n)]
+        planner_parameters = [(n, p) for n, p in parameters if so101_goal.planner_parameter(n)]
+        groups = [{'params': [p for _, p in expert_parameters], 'lr_scale': 1.0},
+                  {'params': [p for _, p in planner_parameters], 'lr_scale': goal_cfg['planner_learning_rate_scale']}]
+        class_weights = torch.tensor(so101_goal.phase_weights(frames.parts[0]['phase'][frames.data['train_rows']]),
+                                     dtype=torch.float32, device='cuda')
+        emit(out, {'stage': 'goal_setup', 'expert_parameters': sum(p.numel() for _, p in expert_parameters),
+                   'planner_parameters': sum(p.numel() for _, p in planner_parameters),
+                   'phase_class_weights': dict(zip(so101_goal.PHASES, class_weights.tolist()))})
+    else:
+        expert_parameters = parameters
+        groups = [{'params': [p for _, p in parameters], 'lr_scale': 1.0}]
+    optimizer = torch.optim.AdamW(groups, lr=cfg['learning_rate'], betas=(0.9, 0.95), eps=1e-8, weight_decay=cfg['weight_decay'])
 
     def evaluate(step):
         old_rng = torch.get_rng_state(); old_cuda_rng = torch.cuda.get_rng_state()
-        joint_errors = []
+        joint_errors = []; planner_rows = []
         policy.eval()
         try:
             for row in frames.data['validation_rows']:
                 raw = frames.batch([int(row)])
+                goal = raw.pop('goal', None)
                 target = raw['action'].numpy()[0].copy()
                 mask = ~raw['action_is_pad'].numpy()[0]
                 torch.manual_seed(100000 + int(row))
                 with torch.inference_mode(), torch.autocast('cuda', dtype=torch.bfloat16):
                     batch = pre(raw)
-                    prediction = post(policy.predict_action_chunk(batch)).float().cpu().numpy()[0]
+                    if goal_cfg:
+                        goal = so101_goal.labels_to_device(goal, 'cuda')
+                        # Planner first: predict_action_chunk rewrites observation entries of ``batch`` in place.
+                        prefix_out, prefix_pad_masks, state = so101_goal.prefix_features(policy, batch)
+                        planned = policy.model.goal_planner(policy.model.goal_planner.slow_features(prefix_out, prefix_pad_masks), state)
+                        planner_rows.append(so101_goal.planner_metrics(planned, goal))
+                        # Offline action check uses the recorded (noise-free) goal, i.e. experiment B's condition.
+                        so101_goal.set_goal(policy, so101_goal.goal_vector_from_labels(goal))
+                    try:
+                        prediction = post(policy.predict_action_chunk(batch)).float().cpu().numpy()[0]
+                    finally:
+                        if goal_cfg: so101_goal.set_goal(policy, None)
                 joint_errors.append(np.abs(prediction[mask] - target[mask]))
             mae = np.concatenate(joint_errors).mean(0)
             normalized = float(np.mean(mae / np.asarray(stats['action']['std'])))
             result = {'stage': 'validation', 'step': step, 'normalized_action_mae': normalized,
                       'per_joint_mae': mae.tolist(), 'units': 'degrees for 5 arm joints; gripper percentage points',
                       'observations': len(joint_errors), 'scope': 'offline held-out demonstrations; not task success'}
+            if goal_cfg:
+                merged = {k: np.concatenate([r[k] for r in planner_rows]) for k in planner_rows[0]}
+                result['action_condition'] = 'recorded goal, no noise, no null'
+                result['planner'] = {'phase_accuracy': float(merged['phase_correct'].mean()),
+                    'phase_accuracy_by_phase': {p: float(merged['phase_correct'][merged['phase'] == i].mean())
+                                                for i, p in enumerate(so101_goal.PHASES) if (merged['phase'] == i).any()},
+                    'position_error_mm_median': float(np.median(merged['position_error_mm'])),
+                    'position_error_mm_p90': float(np.percentile(merged['position_error_mm'], 90)),
+                    'rotation_error_deg_median': float(np.median(merged['rotation_error_deg'])),
+                    'aperture_error_mean': float(merged['aperture_error'].mean())}
             emit(out, result)
             return normalized
         finally:
@@ -251,25 +291,41 @@ def train(cfg, out, smoke, resume=False):
     pending = draw()
     first_param = next(p for n, p in parameters if 'action_out_proj.weight' in n)
     initial = first_param.detach().clone()
-    for step in range(start_step + 1, (2 if smoke else cfg['steps']) + 1):
+    last_step = 2 if smoke else min(cfg['steps'], stop_step or cfg['steps'])
+    for step in range(start_step + 1, last_step + 1):
         policy.train(); optimizer.zero_grad(set_to_none=True)
         progress = min(1.0, max(0.0, (step - cfg['warmup_steps']) / (cfg['steps'] - cfg['warmup_steps'])))
         lr = (cfg['minimum_learning_rate'] + 0.5 * (cfg['learning_rate'] - cfg['minimum_learning_rate']) * (1 + math.cos(math.pi * progress)))
         if step <= cfg['warmup_steps']:
             lr = cfg['learning_rate'] * step / cfg['warmup_steps']
-        for group in optimizer.param_groups: group['lr'] = lr
-        losses = []
-        for _ in range(1 if smoke else cfg['gradient_accumulation']):
+        for group in optimizer.param_groups: group['lr'] = lr * group.get('lr_scale', 1.0)
+        losses = []; planner_losses = []; planner_terms = []
+        accumulation = 1 if smoke else cfg['gradient_accumulation']
+        for _ in range(accumulation):
             raw = pending[1].result()
             pending = draw()
+            goal = raw.pop('goal', None)
             batch = pre(raw)
             with torch.autocast('cuda', dtype=torch.bfloat16):
-                loss, _ = policy(batch)
+                if goal_cfg:
+                    loss, planner_loss, terms = so101_goal.training_loss(
+                        policy, batch, so101_goal.labels_to_device(goal, 'cuda'), goal_cfg, class_weights)
+                else:
+                    loss, _ = policy(batch)
             if not torch.isfinite(loss): raise RuntimeError('Nonfinite loss')
-            (loss / (1 if smoke else cfg['gradient_accumulation'])).backward()
+            if goal_cfg:
+                if not torch.isfinite(planner_loss): raise RuntimeError('Nonfinite planner loss')
+                # Disjoint parameters and a detached planner input: the sum backpropagates each loss to its own side.
+                ((loss + goal_cfg['planner_loss_weight'] * planner_loss) / accumulation).backward()
+                planner_losses.append(float(planner_loss.detach())); planner_terms.append(terms)
+            else:
+                (loss / accumulation).backward()
             losses.append(float(loss.detach()))
-        norm = torch.nn.utils.clip_grad_norm_([p for _, p in parameters], cfg['gradient_clip'])
+        norm = torch.nn.utils.clip_grad_norm_([p for _, p in expert_parameters], cfg['gradient_clip'])
         if not torch.isfinite(norm) or float(norm) == 0: raise RuntimeError('Invalid gradient norm')
+        if goal_cfg:
+            planner_norm = torch.nn.utils.clip_grad_norm_([p for _, p in planner_parameters], goal_cfg['planner_gradient_clip'])
+            if not torch.isfinite(planner_norm) or float(planner_norm) == 0: raise RuntimeError('Invalid planner gradient norm')
         if step == 1:
             stage_grads = {str(i): sum(float(p.grad.abs().sum()) for n, p in parameters
                 if f'lm_expert.layers.{i}.' in n and p.grad is not None) for i in range(16)}
@@ -277,13 +333,27 @@ def train(cfg, out, smoke, resume=False):
                 raise RuntimeError('Missing expert layer gradient')
             if any(p.grad is not None for p in policy.parameters() if not p.requires_grad):
                 raise RuntimeError('Frozen weights have gradients')
-            emit(out, {'stage': 'gradient_audit', 'all_16_expert_layers_positive': True,
-                       'per_layer_gradient_l1': stage_grads, 'frozen_gradients_absent': True})
+            audit = {'stage': 'gradient_audit', 'all_16_expert_layers_positive': True,
+                     'per_layer_gradient_l1': stage_grads, 'frozen_gradients_absent': True}
+            if goal_cfg:
+                # With the zero-initialised output layer, only that layer (and the null embedding) receives
+                # gradient at step 1; the input layer starts learning once the output weights are non-zero.
+                goal_grads = {n: float(p.grad.abs().sum()) if p.grad is not None else 0.0
+                              for n, p in parameters if '.goal_embedding.' in f'.{n}'}
+                if goal_grads['model.goal_embedding.out.weight'] <= 0:
+                    raise RuntimeError('Goal embedding output layer has no gradient')
+                if any(p.grad is None or float(p.grad.abs().sum()) <= 0 for _, p in planner_parameters):
+                    raise RuntimeError('Missing planner gradient')
+                audit.update({'goal_embedding_gradient_l1': goal_grads, 'planner_all_positive': True})
+            emit(out, audit)
         optimizer.step()
         record = {'stage': 'smoke' if smoke else 'training', 'step': step, 'steps': cfg['steps'],
                   'loss': float(np.mean(losses)), 'learning_rate': lr, 'gradient_norm': float(norm),
                   'elapsed_seconds': time.perf_counter() - started,
                   'peak_cuda_bytes': torch.cuda.max_memory_allocated()}
+        if goal_cfg:
+            record.update({'planner_loss': float(np.mean(planner_losses)), 'planner_gradient_norm': float(planner_norm),
+                           'planner_terms': {k: float(np.mean([t[k] for t in planner_terms])) for k in planner_terms[0]}})
         if smoke or step % 10 == 0 or step == 1:
             emit(out, record)
         if not smoke:
@@ -317,7 +387,7 @@ def train(cfg, out, smoke, resume=False):
     loader.shutdown(wait=True)
     delta = float((first_param.detach() - initial).norm())
     assert delta > 0 and math.isfinite(delta)
-    emit(out, {'stage': 'smoke_completed' if smoke else 'completed', 'steps': step,
+    emit(out, {'stage': 'smoke_completed' if smoke else ('stopped' if last_step < cfg['steps'] else 'completed'), 'steps': step,
                'action_out_weight_delta_l2': delta, 'best_step': best_step, 'best_metric': None if smoke else best,
                'quantization_started': False})
 
@@ -327,11 +397,16 @@ def main():
     parser.add_argument('--config', type=Path, default=Path('config/so100_real_finetune_v1.json'))
     parser.add_argument('--stage', choices=['prepare', 'smoke', 'train'], required=True)
     parser.add_argument('--resume', action='store_true')
+    parser.add_argument('--stop-step', type=int,
+                        help='stop after this step (a multiple of eval_every, so best/last/resume state are saved there); '
+                             'the learning-rate schedule still follows the configured total steps')
     args = parser.parse_args()
     os.environ['HF_HUB_OFFLINE'] = '1'; os.environ['TRANSFORMERS_OFFLINE'] = '1'
     if args.resume and args.stage != 'train':
         parser.error('--resume is only available for training')
     cfg = json.loads(args.config.read_text())
+    if args.stop_step is not None and (args.stage != 'train' or args.stop_step % cfg['eval_every']):
+        parser.error('--stop-step needs --stage train and a multiple of eval_every')
     out = Path(cfg['output']); out.mkdir(parents=True, exist_ok=True)
     if args.stage == 'prepare' and cfg.get('evaluation') == 'scripted_sim':
         from qvla.evaluation.finetune_so101_scripted import prepare_scripted
@@ -339,7 +414,7 @@ def main():
     elif args.stage == 'prepare':
         prepare(cfg, out)
     else:
-        train(cfg, out, args.stage == 'smoke', resume=args.resume)
+        train(cfg, out, args.stage == 'smoke', resume=args.resume, stop_step=args.stop_step)
 
 
 if __name__ == '__main__':

@@ -78,6 +78,8 @@ class ScriptedFrames:
         index = np.load(out / 'data.npz')
         self.data = {'train_rows': index['train_rows'], 'validation_rows': index['validation_rows']}
         self.camera_map = cfg['camera_map']; self.task = cfg['task']
+        # Goal-conditioned runs also read the per-frame privileged labels (v2 generator) at frame t.
+        self.goal = bool(cfg.get('goal_conditioning'))
 
     def _image(self, part, cam, row):
         import torch
@@ -103,6 +105,11 @@ class ScriptedFrames:
         batch.update({'observation.state': torch.from_numpy(np.stack(states)),
                       'action': torch.from_numpy(np.stack(actions)),
                       'action_is_pad': torch.from_numpy(np.stack(masks)), 'task': [self.task] * len(rows)})
+        if self.goal:
+            # Not a policy input: the trainer pops it before the LeRobot preprocessor.
+            located = [(int(r >= self.base), int(r - int(r >= self.base) * self.base)) for r in rows]
+            batch['goal'] = {key: torch.from_numpy(np.stack([self.parts[p][key][row] for p, row in located]))
+                             for key in ('phase', 'goal_pos', 'goal_rot', 'tcp_pose')}
         return batch
 
 
