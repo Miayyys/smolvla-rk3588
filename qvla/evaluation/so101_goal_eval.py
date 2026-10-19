@@ -68,21 +68,31 @@ def evaluate(args):
               'max_steps': args.max_steps, 'num_flow_steps': 10, 'camera_map': cfg['camera_map'], 'episodes': []}
     start, count = gen['splits'][args.split]
     seeds = args.seeds if args.seeds else list(range(start, start + count))
+    if args.goal_source == 'takeover':
+        from qvla.evaluation.collect_so101_dagger import _snapshot, takeover_expert
     for seed in seeds:
         obs, _ = env.reset(seed=seed); policy.reset()
-        expert = Expert(env, ExpertParams(max_attempts=args.gate_max_attempts))
+        # Takeover goals use the DAgger tracker setting (10 attempts); the takeover rules decide the goal.
+        expert = Expert(env, ExpertParams(max_attempts=10 if args.goal_source == 'takeover' else args.gate_max_attempts))
         goal_rng = np.random.default_rng(700000 + seed)
         info = {'is_grasped': 0.0, 'success': False}
         success = grasp = False; steps = chunks = 0; queue = []; trace = []; frames = []; phases = []; traces = []
         started = time.perf_counter()
         while steps < args.max_steps:
             # Advance the gate on the current observation, as the generator did before recording frame t.
+            before = _snapshot(expert) if args.goal_source == 'takeover' else None
             expert.act(info)
             if not queue:
                 state = sim_qpos_to_dataset_row(obs['state'], gripper_limits_rad=limits).astype('float32')
                 batch = {key: torch.from_numpy(obs[cam].copy()).permute(2, 0, 1).float() / 255 for key, cam in cfg['camera_map'].items()}
                 batch.update({'observation.state': torch.from_numpy(state), 'task': cfg['task']})
                 goal_pos, goal_rot, _ = expert.last_goal
+                goal_phase = expert.phase
+                if args.goal_source == 'takeover':
+                    # Same rule as the DAgger labels: the expert that would take over from this state (computing
+                    # its goal reads the simulator but does not change it).
+                    take, _ = takeover_expert(env, before, info['is_grasped'] >= 0.5, max_attempts=5)
+                    take.act(info); goal_pos, goal_rot, _ = take.last_goal; goal_phase = take.phase
                 tcp_pos, tcp_rot = tcp_now()
                 as_tensor = lambda a: torch.as_tensor(np.asarray(a, dtype='float32'), device='cuda')[None]
                 offset = rot_noise = None
@@ -91,7 +101,7 @@ def evaluate(args):
                     offset = as_tensor(goal_rng.standard_normal(3) * args.goal_position_noise_m / np.sqrt(3))
                     angle = goal_rng.standard_normal() * np.radians(args.goal_rotation_noise_deg)
                     rot_noise = so101_goal.axis_angle_matrix(as_tensor(axis), torch.tensor([angle], dtype=torch.float32, device='cuda'))
-                vector = so101_goal.goal_vector(torch.tensor([so101_goal.PHASES.index(expert.phase)], device='cuda'),
+                vector = so101_goal.goal_vector(torch.tensor([so101_goal.PHASES.index(goal_phase)], device='cuda'),
                                                 as_tensor(goal_pos), as_tensor(goal_rot), as_tensor(tcp_pos), as_tensor(tcp_rot),
                                                 offset, rot_noise)
                 null_mask = torch.tensor([args.goal_source == 'null'], device='cuda')
@@ -103,7 +113,7 @@ def evaluate(args):
                     finally:
                         so101_goal.set_goal(policy, None)
                 queue = list(actions[:args.execute]); chunks += 1
-                phases.append(expert.phase)
+                phases.append(goal_phase)
             row = queue.pop(0)
             if steps % 10 == 0 and args.gif:
                 frames.append(Image.fromarray(np.concatenate([obs[c] for c in cfg['camera_map'].values()], axis=1)))
@@ -144,7 +154,9 @@ def main():
     p.add_argument('--seeds', type=int, nargs='+')
     p.add_argument('--execute', type=int, default=10)
     p.add_argument('--max-steps', type=int, default=900)
-    p.add_argument('--goal-source', choices=['oracle', 'null'], default='oracle')
+    p.add_argument('--goal-source', choices=['oracle', 'takeover', 'null'], default='oracle',
+                   help='oracle: phase-tracking expert goal; takeover: goal of the expert that would take over from the '
+                        'current state (the DAgger labelling rule); null: learned null-goal embedding')
     p.add_argument('--goal-position-noise-m', type=float, default=0.0)
     p.add_argument('--goal-rotation-noise-deg', type=float, default=0.0)
     p.add_argument('--gate-max-attempts', type=int, default=2,

@@ -269,6 +269,72 @@ def label(args):
                       'seconds': manifest['label_seconds']}), flush=True)
 
 
+def _goal_worker(job):
+    """Goal labels for the goal-conditioned model: phase and goal pose of the takeover expert at the sample's state
+    (after its first act(), as the generator records them) and the TCP pose from forward kinematics."""
+    os.environ.setdefault('MUJOCO_GL', 'egl')
+    import sys
+    import mujoco
+    from qvla.evaluation.generate_so101_scripted_data import PHASES
+    from qvla.evaluation.so101_scripted_expert import NEXUS_SOURCE, make_env
+    sys.path.insert(0, NEXUS_SOURCE + '/src')
+    from so101_nexus import sim_qpos_to_dataset_row
+    directory, indices, max_attempts = job
+    data = np.load(directory / 'rollout.npz'); labelled = np.load(directory / 'train.npz')
+    snapshots = pickle.loads((directory / 'tracker_snapshots.pkl').read_bytes())
+    env = make_env(cameras=False, max_episode_steps=100000); u = env.unwrapped; scratch = mujoco.MjData(u.model)
+    limits = (float(env.action_space.low[-1]), float(env.action_space.high[-1]))
+    spec = mujoco.mjtState.mjSTATE_INTEGRATION
+    out = []; current_seed = None
+    for i in indices:
+        seed = int(data['episodes'][i])
+        if seed != current_seed:
+            env.reset(seed=seed); current_seed = seed
+        mujoco.mj_setState(u.model, u.data, data['sim_state'][i], spec); mujoco.mj_forward(u.model, u.data)
+        scratch.qpos[:] = u.data.qpos; mujoco.mj_kinematics(u.model, scratch)
+        quat = np.zeros(4); mujoco.mju_mat2Quat(quat, scratch.site_xmat[u._tcp_site_id])
+        tcp = np.concatenate([scratch.site_xpos[u._tcp_site_id], quat]).astype('float32')
+        info = {'is_grasped': float(data['is_grasped'][i]), 'success': False}
+        expert, _ = takeover_expert(env, snapshots[i], info['is_grasped'] >= 0.5, max_attempts)
+        first = sim_qpos_to_dataset_row(expert.act(info), gripper_limits_rad=limits).astype('float32')
+        goal, rot, _ = expert.last_goal
+        same = bool(np.array_equal(first, labelled['action_chunks'][i, 0]))
+        out.append((i, PHASES.index(expert.phase), goal.astype('float32'), np.asarray(rot, dtype='float32').reshape(9), tcp, same))
+    env.close()
+    return out
+
+
+def goal_labels(args):
+    source, out = args.source, args.output
+    labelled = np.load(source / 'train.npz'); n = len(labelled['episodes'])
+    out.mkdir(parents=True, exist_ok=True)
+    if (out / 'manifest.json').exists():
+        raise ValueError('Goal labels already written; preserve them')
+    blocks = np.array_split(np.arange(n), max(1, args.workers * 4))
+    jobs = [(source, block.tolist(), args.takeover_max_attempts) for block in blocks if len(block)]
+    started = time.perf_counter()
+    with mp.get_context('spawn').Pool(args.workers) as pool:
+        results = sorted((r for part in pool.imap(_goal_worker, jobs) for r in part), key=lambda r: r[0])
+    assert [r[0] for r in results] == list(range(n))
+    arrays = {k: labelled[k] for k in labelled.files}
+    arrays['tracker_phase'] = labelled['phase']
+    arrays['phase'] = np.asarray([r[1] for r in results])  # phase of the expert that produced the chunk
+    arrays['goal_pos'] = np.stack([r[2] for r in results]); arrays['goal_rot'] = np.stack([r[3] for r in results])
+    arrays['tcp_pose'] = np.stack([r[4] for r in results])
+    first_action_equal = int(sum(r[5] for r in results))
+    if first_action_equal != n:
+        raise RuntimeError(f'Takeover first action differs from the stored chunk in {n - first_action_equal} samples')
+    np.savez(out / 'train.npz', **arrays)
+    for cam_file in source.glob('train_*.jpeg.bin'):
+        (out / cam_file.name).symlink_to(cam_file.resolve())
+    manifest = {'scope': 'goal labels (takeover expert phase/goal pose after its first act; FK TCP) for a labelled DAgger shard',
+                'source': str(source), 'source_data_sha256': sha(source / 'train.npz'), 'samples': n,
+                'first_action_equal_to_stored_chunk': first_action_equal, 'takeover_max_attempts': args.takeover_max_attempts,
+                'seconds': time.perf_counter() - started, 'data_sha256': sha(out / 'train.npz')}
+    (out / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
+    print(json.dumps({'stage': 'goal_labelled', **{k: manifest[k] for k in ('samples', 'first_action_equal_to_stored_chunk', 'seconds')}}), flush=True)
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     sub = p.add_subparsers(dest='stage', required=True)
@@ -291,8 +357,13 @@ def main():
     lab.add_argument('--workers', type=int, default=8)
     lab.add_argument('--horizon', type=int, default=50)
     lab.add_argument('--takeover-max-attempts', type=int, default=5)
+    gl = sub.add_parser('goal-labels')
+    gl.add_argument('--source', type=Path, required=True, help='labelled shard directory')
+    gl.add_argument('--output', type=Path, required=True)
+    gl.add_argument('--workers', type=int, default=8)
+    gl.add_argument('--takeover-max-attempts', type=int, default=5)
     args = p.parse_args()
-    rollout(args) if args.stage == 'rollout' else label(args)
+    {'rollout': rollout, 'label': label, 'goal-labels': goal_labels}[args.stage](args)
 
 
 if __name__ == '__main__':

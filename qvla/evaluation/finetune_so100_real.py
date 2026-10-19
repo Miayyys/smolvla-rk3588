@@ -173,8 +173,6 @@ def train(cfg, out, smoke, resume=False, stop_step=None):
         from safetensors.torch import load_file
         policy.load_state_dict(load_file(cfg['init_weights'], device='cuda'), strict=True)
     goal_cfg = cfg.get('goal_conditioning')
-    if goal_cfg and cfg.get('extra_train_roots'):
-        raise ValueError('Extra training roots carry no privileged goal labels')
     if goal_cfg:
         from qvla.evaluation import so101_goal
         so101_goal.attach(policy)
@@ -203,8 +201,12 @@ def train(cfg, out, smoke, resume=False, stop_step=None):
         planner_parameters = [(n, p) for n, p in parameters if so101_goal.planner_parameter(n)]
         groups = [{'params': [p for _, p in expert_parameters], 'lr_scale': 1.0},
                   {'params': [p for _, p in planner_parameters], 'lr_scale': goal_cfg['planner_learning_rate_scale']}]
-        class_weights = torch.tensor(so101_goal.phase_weights(frames.parts[0]['phase'][frames.data['train_rows']]),
-                                     dtype=torch.float32, device='cuda')
+        for part in frames.parts:
+            if not {'phase', 'goal_pos', 'goal_rot', 'tcp_pose'} <= set(part):
+                raise ValueError('Every training source of a goal-conditioned run needs goal labels')
+        rows = frames.data['train_rows']; part_of = np.searchsorted(frames.bases, rows, side='right') - 1
+        train_phases = np.concatenate([frames.parts[p]['phase'][rows[part_of == p] - frames.bases[p]] for p in np.unique(part_of)])
+        class_weights = torch.tensor(so101_goal.phase_weights(train_phases), dtype=torch.float32, device='cuda')
         emit(out, {'stage': 'goal_setup', 'expert_parameters': sum(p.numel() for _, p in expert_parameters),
                    'planner_parameters': sum(p.numel() for _, p in planner_parameters),
                    'phase_class_weights': dict(zip(so101_goal.PHASES, class_weights.tolist()))})

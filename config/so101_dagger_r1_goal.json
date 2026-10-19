@@ -1,0 +1,51 @@
+{
+  "model_dir": "artifacts/smolvla_base",
+  "init_weights": "runs/so101_backup/full_v2_step10000/last/model.safetensors",
+  "vlm_assets_dir": "artifacts/transfer/smolvlm2_assets",
+  "dataset_root": "runs/so101_scripted_data_v2",
+  "partition": "runs/so101_scripted_data_v2/manifest.json",
+  "extra_train_roots": [
+    "runs/so101_dagger_r1_data_goal/shard0",
+    "runs/so101_dagger_r1_data_goal/shard1"
+  ],
+  "extra_train_repeat": 4,
+  "output": "runs/so101_dagger_r1_goal",
+  "seed": 42,
+  "image_size": 512,
+  "batch_size": 16,
+  "gradient_accumulation": 4,
+  "steps": 5000,
+  "learning_rate": 5e-05,
+  "minimum_learning_rate": 2.5e-06,
+  "warmup_steps": 200,
+  "weight_decay": 1e-10,
+  "gradient_clip": 10.0,
+  "eval_every": 1000,
+  "minimum_steps": 5000,
+  "patience_evaluations": 5,
+  "validation_frames_per_episode": 3,
+  "precision": "float32 master weights; CUDA bfloat16 autocast",
+  "training_scope": "official default: freeze VLM; update all 16 action expert layers, state and action interfaces; plus goal_embedding (Expert side) and goal_planner (separate group)",
+  "schedule_source": "fine-tune from baseline A step 10000 (fresh AdamW): warmup 200, cosine 5e-5 -> 2.5e-6 over 5000 steps; micro-batch 16 x 4 = effective 64 on the local 8 GB RTX 4060",
+  "task": "Pick up the red cube and place it on the blue circle.",
+  "camera_map": {
+    "observation.images.camera1": "overhead_camera",
+    "observation.images.camera2": "wrist_camera"
+  },
+  "teacher_loss": false,
+  "quantization": false,
+  "evaluation": "scripted_sim",
+  "data_scope": "goal-conditioned structure (experiment B modules) on exactly the DAgger round 1 data: v2 training frames (recorded expert goals) plus the same DAgger samples, whose goal labels are the phase/goal pose of the takeover expert that produced their chunk; DAgger rows listed 4 times; init from baseline A step 10000 with zero-initialised goal modules (identical start to DAgger round 1); stats of v2; offline check on v2 validation episodes x 3 frames; test seeds unused",
+  "save_last": true,
+  "goal_conditioning": {
+    "design": "docs/so101-goal-conditioned-design.md",
+    "goal_vector": "phase one-hot 9, delta position / 0.1 m 3, R_tcp^T R_goal 6D 6, phase aperture / 100 1, |delta| / 0.1 m 1; world frame = robot base frame",
+    "injection": "zero-initialised MLP added to all 50 Expert action tokens; prefix, suffix length, masks and position ids unchanged",
+    "goal_position_noise_m": 0.01,
+    "goal_rotation_noise_deg": 5.0,
+    "null_goal_probability": 0.1,
+    "planner_loss_weight": 1.0,
+    "planner_learning_rate_scale": 1.0,
+    "planner_gradient_clip": 10.0
+  }
+}
