@@ -1,5 +1,7 @@
 # SO101仿真抓放：文档与产物索引（归档，2026-10-19）
 
+> 迁移（2026-10-19）：下文 `runs/so101_*`、`runs/so100_*`、`artifacts/smolvla_base`、`artifacts/transfer/smolvlm2_assets`、`artifacts/datasets/*` 与 `.venv-haq-local` 已移到 `/home/loser/Study/so101-vla-edge`（`runs/`、`artifacts/`、`.venv`），代码在其 `so101vla/` 中，见 [cleanup-2026-10-19.md](cleanup-2026-10-19.md)。
+
 分支`experiment/so101-goal-conditioned`（远端`smolvla-rk3588`）。本地RTX 4060 Laptop；GPUServer已停机。产物在主仓库`runs/`（Git忽略；worktree中的`runs/`、`artifacts/`为指向主仓库的软链接，已加入本地exclude）。环境：`.venv-haq-local`，Nexus源码`/home/loser/Study/so101-nexus`（`7bdb671`）。
 
 ## 1. 文档

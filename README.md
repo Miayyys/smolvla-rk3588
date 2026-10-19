@@ -1,5 +1,7 @@
 # QVLA：SmolVLA硬件感知混合精度量化与RK3588部署
 
+> 存档（2026-10-19）：本仓库为 HAQ/RK3588 量化部署项目的存档。SO101 仿真预研与毕设（SO-101 真机 + RK3588 端侧量化部署）已拆到独立项目 `/home/loser/Study/so101-vla-edge`；Git 忽略产物的清理与迁移见 [docs/cleanup-2026-10-19.md](docs/cleanup-2026-10-19.md)。
+
 从原始FP基线、HAQ风格强化学习搜索、OpenVLA-OFT动作蒸馏，到混合精度QAT、独立PTQ与真实RK3588整策略部署。语言使用RKLLM，视觉与动作专家使用RKNN，CPU执行embedding及前后处理。
 
 ## 实测结果
