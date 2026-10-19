@@ -43,15 +43,15 @@ def main():
     cfg = json.loads(args.config.read_text()); run = Path(cfg['output'])
     stats = json.loads((run / 'stats.json').read_text())
     frames = ScriptedFrames(cfg, run)
-    train, val = frames.parts
+    train, val = frames.parts[:2]
     train_eps = np.unique(train['episodes'][frames.data['train_rows']])
     picked = np.sort(np.random.default_rng(0).choice(train_eps, args.episodes, replace=False))
     val_eps = np.unique(val['episodes'])
     per = cfg['validation_frames_per_episode']
     sets = {'train': _check_rows(train, picked, per),
-            'validation': [r + frames.base for r in _check_rows(val, val_eps, per)],
+            'validation': [r + int(frames.bases[1]) for r in _check_rows(val, val_eps, per)],
             'train_grasp_window': _close_rows(train, picked),
-            'validation_grasp_window': [r + frames.base for r in _close_rows(val, val_eps)]}
+            'validation_grasp_window': [r + int(frames.bases[1]) for r in _close_rows(val, val_eps)]}
     policy, _, _ = load_policy(SimpleNamespace(model_dir=args.model_dir.resolve(),
         vlm_assets_dir=Path(cfg['vlm_assets_dir']).resolve(), device='cuda'))
     policy.float().eval(); torch.set_num_threads(4)

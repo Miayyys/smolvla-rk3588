@@ -53,14 +53,28 @@ def prepare_scripted(cfg, out):
         stats = {key: {'mean': train[src][train_rows].mean(0).tolist(), 'std': np.maximum(train[src][train_rows].std(0), 1e-6).tolist()}
                  for key, src in (('observation.state', 'states'), ('action', 'actions'))}
     (out / 'stats.json').write_text(json.dumps(stats, indent=2) + '\n')
+    # Extra training sources (e.g. DAgger rounds) follow the train and validation parts in the global row index;
+    # all their frames are training frames. Normalisation statistics stay those of the base data.
+    base = len(train['episodes']) + len(validation['episodes'])
+    extra_rows, extra_sources = [], []
+    repeat = int(cfg.get('extra_train_repeat', 1))  # extra rows listed this many times: sampling weight
+    for root in cfg.get('extra_train_roots', []):
+        root = Path(root); data = np.load(root / 'train.npz'); n = len(data['episodes'])
+        extra_rows.append(np.tile(base + np.arange(n), repeat)); base += n
+        extra_sources.append({'root': str(root), 'frames': int(n), 'episodes': int(len(np.unique(data['episodes']))),
+                              'data_sha256': sha(root / 'train.npz'), 'manifest_sha256': sha(root / 'manifest.json')})
+    base_train_frames = int(len(train_rows))
+    train_rows = np.concatenate([train_rows, *extra_rows]) if extra_rows else train_rows
     np.savez(out / 'data.npz', train_rows=train_rows, validation_rows=np.asarray(check))
     prepared = {'config': cfg, 'partition_sha256': sha(cfg['partition']), 'stats_sha256': sha(out / 'stats.json'),
                 'source_splits': {k: {kk: vv for kk, vv in v.items()} for k, v in manifest['splits'].items()},
                 'train_episodes': train_eps.tolist(), 'train_frames': int(len(train_rows)),
+                'base_train_frames': base_train_frames, 'extra_train_sources': extra_sources, 'extra_train_repeat': repeat,
                 'offline_check_split': check_split, 'offline_check_rows': check,
                 'scope': 'scripted-expert simulator demonstrations; offline check is not task success'}
     (out / 'prepared.json').write_text(json.dumps(prepared, indent=2) + '\n')
     emit(out, {'stage': 'prepared', 'train_frames': len(train_rows), 'train_episodes': len(train_eps),
+               'base_train_frames': base_train_frames, 'extra_train_frames': [s['frames'] for s in extra_sources],
                'offline_check_split': check_split, 'offline_check_rows': len(check)})
 
 
@@ -69,12 +83,14 @@ class ScriptedFrames:
 
     def __init__(self, cfg, out):
         source = Path(cfg['dataset_root'])
+        # Global rows: base train, base validation, then each extra training root (same order as prepare).
+        sources = [(source, 'train'), (source, 'validation')] + [(Path(r), 'train') for r in cfg.get('extra_train_roots', [])]
         # Materialize every array once: indexing an NpzFile re-reads the whole array from the archive
         # on each access, which made a 64-row batch take ~3 s on the 978k-frame v2 training split.
-        self.parts = [{k: v for k, v in np.load(source / f'{split}.npz').items()} for split in ('train', 'validation')]
-        self.base = len(self.parts[0]['episodes'])
-        self.streams = [{cam: (source / f'{split}_{cam}.jpeg.bin').open('rb') for cam in cfg['camera_map'].values()}
-                        for split in ('train', 'validation')]
+        self.parts = [{k: v for k, v in np.load(root / f'{split}.npz').items()} for root, split in sources]
+        self.bases = np.cumsum([0] + [len(p['episodes']) for p in self.parts])[:-1]
+        self.streams = [{cam: (root / f'{split}_{cam}.jpeg.bin').open('rb') for cam in cfg['camera_map'].values()}
+                        for root, split in sources]
         index = np.load(out / 'data.npz')
         self.data = {'train_rows': index['train_rows'], 'validation_rows': index['validation_rows']}
         self.camera_map = cfg['camera_map']; self.task = cfg['task']
@@ -89,17 +105,25 @@ class ScriptedFrames:
         image = Image.open(io.BytesIO(stream.read(int(data[f'{cam}_lengths'][row])))).convert('RGB')
         return torch.from_numpy(np.asarray(image).copy()).permute(2, 0, 1)
 
+    def _locate(self, global_row):
+        part = int(np.searchsorted(self.bases, global_row, side='right') - 1)
+        return part, int(global_row - self.bases[part])
+
     def batch(self, rows):
         import torch
         images = {key: [] for key in self.camera_map}; states, actions, masks = [], [], []
         for global_row in rows:
-            part = int(global_row >= self.base); row = int(global_row - part * self.base); data = self.parts[part]
+            part, row = self._locate(global_row); data = self.parts[part]
             for key, cam in self.camera_map.items():
                 images[key].append(self._image(part, cam, row))
-            indices = row + np.arange(50)
-            end = data['end_rows'][row]
-            masks.append(indices > end)
-            actions.append(data['actions'][np.minimum(indices, end)])
+            if 'action_chunks' in data:
+                # DAgger samples carry their own 50-step chunk (expert takeover from this state).
+                masks.append(data['chunk_pad'][row]); actions.append(data['action_chunks'][row])
+            else:
+                indices = row + np.arange(50)
+                end = data['end_rows'][row]
+                masks.append(indices > end)
+                actions.append(data['actions'][np.minimum(indices, end)])
             states.append(data['states'][row])
         batch = {key: torch.stack(v).float() / 255 for key, v in images.items()}
         batch.update({'observation.state': torch.from_numpy(np.stack(states)),
@@ -107,10 +131,24 @@ class ScriptedFrames:
                       'action_is_pad': torch.from_numpy(np.stack(masks)), 'task': [self.task] * len(rows)})
         if self.goal:
             # Not a policy input: the trainer pops it before the LeRobot preprocessor.
-            located = [(int(r >= self.base), int(r - int(r >= self.base) * self.base)) for r in rows]
+            located = [self._locate(r) for r in rows]
             batch['goal'] = {key: torch.from_numpy(np.stack([self.parts[p][key][row] for p, row in located]))
                              for key in ('phase', 'goal_pos', 'goal_rot', 'tcp_pose')}
         return batch
+
+
+TRACE_COLUMNS = ('tcp_to_object_m', 'object_to_target_m', 'is_grasped', 'gripper_command', 'gripper_state',
+                 'object_z_m', 'tcp_z_m', 'tcp_x_m', 'tcp_y_m', 'object_x_m', 'object_y_m')
+
+
+def trace_row(u, info, command_row, obs, limits, to_dataset_row):
+    """One closed-loop step after env.step: distances, grasp flag, gripper command/state (dataset units 0-100),
+    object and TCP positions (world frame, m). Read-only access to the simulator."""
+    obj = u._get_object_pose(); tcp = u._get_tcp_pose()
+    state = to_dataset_row(obs['state'], gripper_limits_rad=limits)
+    return [float(info['tcp_to_obj_dist']), float(info['obj_to_target_dist']), float(info['is_grasped']),
+            float(command_row[5]), float(state[5]), float(obj[2]), float(tcp[2]), float(tcp[0]), float(tcp[1]),
+            float(obj[0]), float(obj[1])]
 
 
 def evaluate(args):
@@ -136,6 +174,7 @@ def evaluate(args):
         'normalizer_processor': {'stats': stats}}, postprocessor_overrides={'unnormalizer_processor': {'stats': stats}})
     gen = data_manifest['config']
     env = make_env(image_size=tuple(gen['image_size']), cameras=True, max_episode_steps=args.max_steps + 10)
+    u = env.unwrapped
     limits = (float(env.action_space.low[-1]), float(env.action_space.high[-1]))
     expert = {(e['split'], e['seed']): e['success'] for e in data_manifest['episodes']}
     args.output.mkdir(parents=True, exist_ok=True)
@@ -146,7 +185,7 @@ def evaluate(args):
     seeds = args.seeds if args.seeds else list(range(start, start + count))
     for seed in seeds:
         obs, _ = env.reset(seed=seed); policy.reset()
-        success = grasp = False; steps = 0; chunks = 0; trace = []; frames = []; started = time.perf_counter()
+        success = grasp = False; steps = 0; chunks = 0; trace = []; frames = []; traces = []; started = time.perf_counter()
         while steps < args.max_steps:
             state = sim_qpos_to_dataset_row(obs['state'], gripper_limits_rad=limits).astype('float32')
             batch = {key: torch.from_numpy(obs[cam].copy()).permute(2, 0, 1).float() / 255 for key, cam in cfg['camera_map'].items()}
@@ -162,6 +201,8 @@ def evaluate(args):
                 obs, _, terminated, _, info = env.step(target.astype('float32')); steps += 1
                 success |= bool(info['success']); grasp |= bool(info['is_grasped'] >= 0.5)
                 trace.append([float(info['tcp_to_obj_dist']), float(info['obj_to_target_dist']), float(info['is_grasped'])])
+                if args.trace:
+                    traces.append(trace_row(u, info, row, obs, limits, sim_qpos_to_dataset_row))
                 if success and args.stop_on_success:
                     break
             if success and args.stop_on_success:
@@ -172,6 +213,8 @@ def evaluate(args):
         report['episodes'].append(result)
         if frames:
             frames[0].save(args.output / f'seed{seed}.gif', save_all=True, append_images=frames[1:], duration=333, loop=0)
+        if traces:
+            np.savez(args.output / f'trace_seed{seed}.npz', columns=np.array(TRACE_COLUMNS), values=np.asarray(traces, dtype='float32'))
         print(json.dumps(result), flush=True)
     eps = report['episodes']
     report['summary'] = {'success': sum(e['success'] for e in eps), 'grasped': sum(e['ever_grasped'] for e in eps), 'episodes': len(eps),
@@ -192,6 +235,7 @@ def main():
     p.add_argument('--max-steps', type=int, default=900)
     p.add_argument('--stop-on-success', action='store_true')
     p.add_argument('--gif', action='store_true')
+    p.add_argument('--trace', action='store_true', help='save per-step trace_seed{N}.npz (columns in TRACE_COLUMNS)')
     evaluate(p.parse_args())
 
 

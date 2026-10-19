@@ -168,7 +168,13 @@ def train(cfg, out, smoke, resume=False, stop_step=None):
     policy.config.input_features = {k: v for k, v in policy.config.input_features.items()
                                     if k in ['observation.state', *cameras]}
     policy.config.empty_cameras = 0
+    if cfg.get('init_weights'):
+        # Continue from an earlier fine-tuned checkpoint of the same structure (fresh optimizer and schedule).
+        from safetensors.torch import load_file
+        policy.load_state_dict(load_file(cfg['init_weights'], device='cuda'), strict=True)
     goal_cfg = cfg.get('goal_conditioning')
+    if goal_cfg and cfg.get('extra_train_roots'):
+        raise ValueError('Extra training roots carry no privileged goal labels')
     if goal_cfg:
         from qvla.evaluation import so101_goal
         so101_goal.attach(policy)
@@ -189,7 +195,8 @@ def train(cfg, out, smoke, resume=False, stop_step=None):
     assert trained_layers == list(range(16))
     (out / 'trainable.json').write_text(json.dumps({'names': [n for n, _ in parameters],
         'parameters': sum(p.numel() for _, p in parameters), 'expert_layers': trained_layers,
-        'model_source_sha256': sha(Path(cfg['model_dir']) / 'model.safetensors')}, indent=2) + '\n')
+        'model_source_sha256': sha(Path(cfg['model_dir']) / 'model.safetensors'),
+        'init_weights_sha256': sha(cfg['init_weights']) if cfg.get('init_weights') else None}, indent=2) + '\n')
     if goal_cfg:
         # Expert side (incl. goal_embedding) and planner are separate groups: disjoint parameters, own clipping.
         expert_parameters = [(n, p) for n, p in parameters if not so101_goal.planner_parameter(n)]

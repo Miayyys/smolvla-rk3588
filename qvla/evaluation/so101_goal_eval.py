@@ -32,6 +32,7 @@ def evaluate(args):
     from PIL import Image
     from lerobot.policies import make_pre_post_processors
     from qvla.evaluation import so101_goal
+    from qvla.evaluation.finetune_so101_scripted import TRACE_COLUMNS, trace_row
     from qvla.evaluation.so101_scripted_expert import NEXUS_SOURCE, Expert, ExpertParams, make_env
     sys.path.insert(0, NEXUS_SOURCE + '/src')
     from so101_nexus import dataset_row_to_sim_qpos, sim_qpos_to_dataset_row
@@ -72,7 +73,7 @@ def evaluate(args):
         expert = Expert(env, ExpertParams(max_attempts=args.gate_max_attempts))
         goal_rng = np.random.default_rng(700000 + seed)
         info = {'is_grasped': 0.0, 'success': False}
-        success = grasp = False; steps = chunks = 0; queue = []; trace = []; frames = []; phases = []
+        success = grasp = False; steps = chunks = 0; queue = []; trace = []; frames = []; phases = []; traces = []
         started = time.perf_counter()
         while steps < args.max_steps:
             # Advance the gate on the current observation, as the generator did before recording frame t.
@@ -110,6 +111,8 @@ def evaluate(args):
             obs, _, terminated, _, info = env.step(target.astype('float32')); steps += 1
             success |= bool(info['success']); grasp |= bool(info['is_grasped'] >= 0.5)
             trace.append([float(info['tcp_to_obj_dist']), float(info['obj_to_target_dist']), float(info['is_grasped'])])
+            if args.trace:
+                traces.append(trace_row(u, info, row, obs, limits, sim_qpos_to_dataset_row) + [float(so101_goal.PHASES.index(expert.phase))])
             if success and args.stop_on_success:
                 break
         reached = [p for i, p in enumerate(phases) if i == 0 or p != phases[i - 1]]
@@ -120,6 +123,9 @@ def evaluate(args):
         report['episodes'].append(result)
         if frames:
             frames[0].save(args.output / f'seed{seed}.gif', save_all=True, append_images=frames[1:], duration=333, loop=0)
+        if traces:
+            np.savez(args.output / f'trace_seed{seed}.npz', columns=np.array(TRACE_COLUMNS + ('gate_phase',)),
+                     values=np.asarray(traces, dtype='float32'))
         print(json.dumps(result), flush=True)
     eps = report['episodes']
     report['summary'] = {'success': sum(e['success'] for e in eps), 'grasped': sum(e['ever_grasped'] for e in eps), 'episodes': len(eps),
@@ -145,6 +151,7 @@ def main():
                    help='grasp attempts before the gate gives up (the scripted expert and its data use 2)')
     p.add_argument('--stop-on-success', action='store_true')
     p.add_argument('--gif', action='store_true')
+    p.add_argument('--trace', action='store_true', help='save per-step trace_seed{N}.npz (TRACE_COLUMNS + gate_phase)')
     evaluate(p.parse_args())
 
 
