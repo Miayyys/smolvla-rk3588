@@ -68,19 +68,28 @@ def evaluate(args):
               'max_steps': args.max_steps, 'num_flow_steps': 10, 'camera_map': cfg['camera_map'], 'episodes': []}
     start, count = gen['splits'][args.split]
     seeds = args.seeds if args.seeds else list(range(start, start + count))
-    if args.goal_source == 'takeover':
+    if args.goal_source in ('takeover', 'planner'):
         from qvla.evaluation.collect_so101_dagger import _snapshot, takeover_expert
+    observed = mujoco.MjData(u.model)
+
+    def tcp_from_observed(state_row):
+        # Forward kinematics of the *measured* arm joints only (robot model, no object/target information).
+        q = dataset_row_to_sim_qpos(state_row, gripper_limits_rad=limits)
+        observed.qpos[u._arm_qpos_addrs] = q[:5]
+        mujoco.mj_kinematics(u.model, observed)
+        return observed.site_xpos[u._tcp_site_id].copy(), observed.site_xmat[u._tcp_site_id].reshape(3, 3).copy()
     for seed in seeds:
         obs, _ = env.reset(seed=seed); policy.reset()
         # Takeover goals use the DAgger tracker setting (10 attempts); the takeover rules decide the goal.
-        expert = Expert(env, ExpertParams(max_attempts=10 if args.goal_source == 'takeover' else args.gate_max_attempts))
+        expert = Expert(env, ExpertParams(max_attempts=10 if args.goal_source in ('takeover', 'planner') else args.gate_max_attempts))
+        planner_log = []  # planner mode: (planned phase, takeover phase, goal position error m) per chunk, diagnostics only
         goal_rng = np.random.default_rng(700000 + seed)
         info = {'is_grasped': 0.0, 'success': False}
         success = grasp = False; steps = chunks = 0; queue = []; trace = []; frames = []; phases = []; traces = []
         started = time.perf_counter()
         while steps < args.max_steps:
             # Advance the gate on the current observation, as the generator did before recording frame t.
-            before = _snapshot(expert) if args.goal_source == 'takeover' else None
+            before = _snapshot(expert) if args.goal_source in ('takeover', 'planner') else None
             expert.act(info)
             if not queue:
                 state = sim_qpos_to_dataset_row(obs['state'], gripper_limits_rad=limits).astype('float32')
@@ -88,12 +97,26 @@ def evaluate(args):
                 batch.update({'observation.state': torch.from_numpy(state), 'task': cfg['task']})
                 goal_pos, goal_rot, _ = expert.last_goal
                 goal_phase = expert.phase
-                if args.goal_source == 'takeover':
+                if args.goal_source in ('takeover', 'planner'):
                     # Same rule as the DAgger labels: the expert that would take over from this state (computing
-                    # its goal reads the simulator but does not change it).
+                    # its goal reads the simulator but does not change it). In planner mode it is logged only.
                     take, _ = takeover_expert(env, before, info['is_grasped'] >= 0.5, max_attempts=5)
                     take.act(info); goal_pos, goal_rot, _ = take.last_goal; goal_phase = take.phase
                 tcp_pos, tcp_rot = tcp_now()
+                if args.goal_source == 'planner':
+                    # Deployable path: the planner head predicts phase and goal pose from the same images and joint
+                    # state; the current TCP comes from forward kinematics of the measured joints.
+                    with torch.inference_mode(), torch.autocast('cuda', dtype=torch.bfloat16):
+                        planner_batch = pre(dict(batch))
+                        prefix_out, prefix_pad_masks, planner_state = so101_goal.prefix_features(policy, planner_batch)
+                        planned = policy.model.goal_planner(policy.model.goal_planner.slow_features(prefix_out, prefix_pad_masks), planner_state)
+                    planned_phase = so101_goal.PHASES[int(planned['phase_logits'].argmax(-1)[0])]
+                    planned_pos = planned['goal_pos'][0].float().cpu().numpy(); planned_rot = planned['goal_rot'][0].float().cpu().numpy()
+                    observed_pos, observed_rot = tcp_from_observed(state)
+                    planner_log.append((planned_phase, goal_phase, float(np.linalg.norm(planned_pos - goal_pos)),
+                                        float(np.linalg.norm(observed_pos - tcp_pos))))
+                    goal_pos, goal_rot, goal_phase = planned_pos, planned_rot, planned_phase
+                    tcp_pos, tcp_rot = observed_pos, observed_rot
                 as_tensor = lambda a: torch.as_tensor(np.asarray(a, dtype='float32'), device='cuda')[None]
                 offset = rot_noise = None
                 if args.goal_position_noise_m > 0 or args.goal_rotation_noise_deg > 0:
@@ -130,6 +153,10 @@ def evaluate(args):
                   'expert_success': expert_success.get((args.split, seed)), 'min_tcp_to_object_m': min(t[0] for t in trace),
                   'final_object_to_target_m': trace[-1][1], 'gate_phase_sequence': reached, 'gate_attempts': expert.attempt,
                   'gate_gave_up': bool(expert.failed), 'wall_seconds': time.perf_counter() - started}
+        if planner_log:
+            result['planner_phase_agreement'] = float(np.mean([r[0] == r[1] for r in planner_log]))
+            result['planner_goal_error_mm_median'] = float(np.median([r[2] for r in planner_log]) * 1000)
+            result['observed_fk_vs_sim_tcp_mm_max'] = float(max(r[3] for r in planner_log) * 1000)
         report['episodes'].append(result)
         if frames:
             frames[0].save(args.output / f'seed{seed}.gif', save_all=True, append_images=frames[1:], duration=333, loop=0)
@@ -154,9 +181,10 @@ def main():
     p.add_argument('--seeds', type=int, nargs='+')
     p.add_argument('--execute', type=int, default=10)
     p.add_argument('--max-steps', type=int, default=900)
-    p.add_argument('--goal-source', choices=['oracle', 'takeover', 'null'], default='oracle',
+    p.add_argument('--goal-source', choices=['oracle', 'takeover', 'planner', 'null'], default='oracle',
                    help='oracle: phase-tracking expert goal; takeover: goal of the expert that would take over from the '
-                        'current state (the DAgger labelling rule); null: learned null-goal embedding')
+                        'current state (the DAgger labelling rule); planner: the model\'s planner head (deployable: no '
+                        'simulator ground truth reaches the policy; takeover goals are only logged); null: learned null goal')
     p.add_argument('--goal-position-noise-m', type=float, default=0.0)
     p.add_argument('--goal-rotation-noise-deg', type=float, default=0.0)
     p.add_argument('--gate-max-attempts', type=int, default=2,
